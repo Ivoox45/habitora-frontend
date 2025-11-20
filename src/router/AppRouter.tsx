@@ -1,9 +1,6 @@
 // src/router/AppRouter.tsx
-
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-
-import { ThemeProvider } from "@/components/theme-provider"; // 👈 NECESARIO
 
 import AuthPage from "@/feature/auth/pages/AuthPage";
 import LandingPage from "@/feature/landing/pages/LandingPage";
@@ -21,32 +18,23 @@ import WelcomeNewUser from "@/feature/start/components/WelcomeNewUser";
 
 import ProtectedRoute from "@/router/ProtectedRoute";
 
-// =============================================
-//  Envuelto con AnimatePresence
-// =============================================
 function AppRouterInner() {
   const location = useLocation();
 
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-
-        {/* ========= RUTAS PÚBLICAS ========= */}
-        
-       // SOLO Landing y Auth sin wrapper AnimatedPage
-
+        {/* PÚBLICAS */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />
 
-
-
-        {/* ========= RUTAS PROTEGIDAS ========= */}
+        {/* PROTEGIDAS */}
         <Route element={<ProtectedRoute />}>
           <Route path="/start" element={<StartPage />} />
           <Route path="/onboarding" element={<OnboardingForm />} />
           <Route path="/welcome" element={<WelcomeNewUser />} />
 
-          {/* ========= LAYOUT PRINCIPAL ========= */}
+          {/* PANEL PRINCIPAL */}
           <Route path="/app" element={<Layout />}>
             <Route index element={<AppHome />} />
             <Route path="habitaciones" element={<PropertiesPage />} />
@@ -56,66 +44,45 @@ function AppRouterInner() {
             <Route path="recordatorios" element={<RemindersPage />} />
           </Route>
         </Route>
-
       </Routes>
     </AnimatePresence>
   );
 }
 
-// =============================================
-//  APP ROUTER -> ENVUELTO EN THEME PROVIDER
-// =============================================
 export default function AppRouter() {
   return (
-    <ThemeProvider
-      defaultTheme="system"
-      storageKey="habitora-intranet-theme"
-    >
-      <BrowserRouter>
-        <AppRouterInner />
-      </BrowserRouter>
-    </ThemeProvider>
+    <BrowserRouter>
+      <AppRouterInner />
+    </BrowserRouter>
   );
 }
 
-// =============================================
-//  HOME DEL PANEL
-// =============================================
 function AppHome() {
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-        Bienvenido a Habitora
-      </h2>
-
-      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+      <h2 className="text-2xl font-semibold">Bienvenido a Habitora</h2>
+      <p className="text-sm text-muted-foreground">
         Esto es solo contenido de prueba dentro del layout con sidebar.
       </p>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-4 shadow-sm">
-          <h3 className="font-semibold mb-1 text-zinc-900 dark:text-zinc-50">
-            Módulo Propiedades
-          </h3>
-          <p className="text-xs text-zinc-600 dark:text-zinc-300">
+        <div className="rounded-xl border p-4 shadow-sm">
+          <h3 className="font-semibold mb-1">Módulo Propiedades</h3>
+          <p className="text-xs text-muted-foreground">
             Aquí iría la gestión de habitaciones, mini-depas, etc.
           </p>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-4 shadow-sm">
-          <h3 className="font-semibold mb-1 text-zinc-900 dark:text-zinc-50">
-            Módulo Inquilinos
-          </h3>
-          <p className="text-xs text-zinc-600 dark:text-zinc-300">
+        <div className="rounded-xl border p-4 shadow-sm">
+          <h3 className="font-semibold mb-1">Módulo Inquilinos</h3>
+          <p className="text-xs text-muted-foreground">
             Información de inquilinos, contratos y pagos.
           </p>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-4 shadow-sm">
-          <h3 className="font-semibold mb-1 text-zinc-900 dark:text-zinc-50">
-            Reportes
-          </h3>
-          <p className="text-xs text-zinc-600 dark:text-zinc-300">
+        <div className="rounded-xl border p-4 shadow-sm">
+          <h3 className="font-semibold mb-1">Reportes</h3>
+          <p className="text-xs text-muted-foreground">
             Resumen de ingresos, ocupación y métricas clave.
           </p>
         </div>
