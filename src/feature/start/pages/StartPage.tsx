@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Plus, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import Spinner from "@/components/spinner"
 import { Button } from "@/components/ui/button";
 import HaloBackground from "../components/HaloBackground";
 import { useUsuarioPropiedades } from "../hooks/useUsuarioPropiedades";
@@ -92,7 +92,7 @@ export default function StartPage() {
     return (
       <main className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden text-center text-white">
         <HaloBackground />
-        <p className="text-sm text-white/80">Cargando tus propiedades...</p>
+        <Spinner />
       </main>
     );
   }
