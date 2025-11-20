@@ -70,6 +70,24 @@ export default function StartPage() {
     [navigate, setCurrentProperty]
   );
 
+  // -----------------------------------------
+  // ⭐ ANIMACIÓN SUAVE AL VOLVER A INICIO
+  // -----------------------------------------
+  const goHomeSmooth = () => {
+    // fade-out suave
+    document.body.style.transition = "opacity 0.25s ease";
+    document.body.style.opacity = "0";
+
+    setTimeout(() => {
+      navigate("/");
+
+      setTimeout(() => {
+        document.body.style.opacity = "1";
+      }, 50);
+    }, 250);
+  };
+  // -----------------------------------------
+
   if (isLoading) {
     return (
       <main className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden text-center text-white">
@@ -155,9 +173,9 @@ export default function StartPage() {
         <Button
           variant="secondary"
           className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-6 py-2 rounded-full shadow-lg transform-gpu hover:-translate-y-0.5"
-          onClick={() => navigate("/auth")}
+          onClick={goHomeSmooth}
         >
-          Ir al panel de acceso
+          Ir a Inicio
         </Button>
       </div>
     </main>

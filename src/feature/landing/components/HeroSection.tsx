@@ -11,62 +11,55 @@ export function HeroSection() {
   );
 
   const goToAppOrStart = () => {
-    if (!isAuthenticated) {
-      navigate("/auth");
-      return;
-    }
-
-    if (currentPropertyId) {
-      navigate("/app");
-    } else {
-      navigate("/start");
-    }
-  };
-
-  const handlePrimaryClick = () => {
-    if (isAuthenticated) {
-      goToAppOrStart();
-    } else {
-      // CTA principal → registro
-      navigate("/auth", { state: { mode: "register" } });
-    }
-  };
-
-  const handleSecondaryClick = () => {
-    if (isAuthenticated) {
-      goToAppOrStart();
-    } else {
-      navigate("/auth", { state: { mode: "login" } });
-    }
+    if (!isAuthenticated) return navigate("/auth");
+    if (currentPropertyId) navigate("/app");
+    else navigate("/start");
   };
 
   return (
-    <section className="pt-16 pb-12 text-center">
+    <section className="pt-16 pb-12 text-center text-foreground">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 mb-4">
+
+        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4">
           Administra tus propiedades
-          <br />
-          y arrendamientos fácilmente
+          <br /> y arrendamientos fácilmente
         </h1>
 
-        <p className="text-base md:text-lg text-gray-600 mb-8">
+        <p className="text-base md:text-lg text-muted-foreground mb-8">
           La plataforma completa para arrendadores de habitaciones y mini-departamentos.
-          Gestiona inquilinos, contratos, pagos y recordatorios desde un solo lugar.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            className="px-6 py-3 rounded-full text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition"
-            onClick={handlePrimaryClick}
-          >
-            Comenzar gratis
-          </button>
-          <button
-            className="px-6 py-3 rounded-full text-sm font-medium border border-gray-300 text-gray-800 bg-white hover:bg-gray-100 transition"
-            onClick={handleSecondaryClick}
-          >
-            Iniciar sesión
-          </button>
+
+          {isAuthenticated ? (
+            <button
+              onClick={goToAppOrStart}
+              className="px-6 py-3 rounded-full text-sm font-medium 
+                         bg-primary text-primary-foreground hover:opacity-90 transition"
+            >
+              Ir al panel
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate("/auth", { state: { mode: "register" } })}
+                className="px-6 py-3 rounded-full text-sm font-medium 
+                           bg-primary text-primary-foreground hover:opacity-90 transition"
+              >
+                Comenzar gratis
+              </button>
+
+              <button
+                onClick={() => navigate("/auth", { state: { mode: "login" } })}
+                className="px-6 py-3 rounded-full text-sm font-medium 
+                           border border-border bg-background text-foreground 
+                           hover:bg-muted transition"
+              >
+                Iniciar sesión
+              </button>
+            </>
+          )}
+
         </div>
       </div>
     </section>

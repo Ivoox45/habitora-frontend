@@ -1,5 +1,9 @@
 // src/router/AppRouter.tsx
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+
+import { ThemeProvider } from "@/components/theme-provider"; // 👈 NECESARIO
 
 import AuthPage from "@/feature/auth/pages/AuthPage";
 import LandingPage from "@/feature/landing/pages/LandingPage";
@@ -10,12 +14,73 @@ import { TenantsPage } from "@/feature/tenants/pages/TenantsPage";
 import { ContractsPage } from "@/feature/contracts/pages/ContractsPage";
 import { PaymentsPage } from "@/feature/payments/pages/PaymentsPage";
 import { RemindersPage } from "@/feature/reminders/pages/RemindersPage";
+
 import StartPage from "@/feature/start/pages/StartPage";
 import OnboardingForm from "@/feature/start/components/OnboardingForm";
 import WelcomeNewUser from "@/feature/start/components/WelcomeNewUser";
 
 import ProtectedRoute from "@/router/ProtectedRoute";
 
+// =============================================
+//  Envuelto con AnimatePresence
+// =============================================
+function AppRouterInner() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+
+        {/* ========= RUTAS PÚBLICAS ========= */}
+        
+       // SOLO Landing y Auth sin wrapper AnimatedPage
+
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+
+
+
+        {/* ========= RUTAS PROTEGIDAS ========= */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/start" element={<StartPage />} />
+          <Route path="/onboarding" element={<OnboardingForm />} />
+          <Route path="/welcome" element={<WelcomeNewUser />} />
+
+          {/* ========= LAYOUT PRINCIPAL ========= */}
+          <Route path="/app" element={<Layout />}>
+            <Route index element={<AppHome />} />
+            <Route path="habitaciones" element={<PropertiesPage />} />
+            <Route path="inquilinos" element={<TenantsPage />} />
+            <Route path="contratos" element={<ContractsPage />} />
+            <Route path="pagos" element={<PaymentsPage />} />
+            <Route path="recordatorios" element={<RemindersPage />} />
+          </Route>
+        </Route>
+
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
+// =============================================
+//  APP ROUTER -> ENVUELTO EN THEME PROVIDER
+// =============================================
+export default function AppRouter() {
+  return (
+    <ThemeProvider
+      defaultTheme="system"
+      storageKey="habitora-intranet-theme"
+    >
+      <BrowserRouter>
+        <AppRouterInner />
+      </BrowserRouter>
+    </ThemeProvider>
+  );
+}
+
+// =============================================
+//  HOME DEL PANEL
+// =============================================
 function AppHome() {
   return (
     <div className="space-y-4">
@@ -56,33 +121,5 @@ function AppHome() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function AppRouter() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Rutas públicas */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/auth" element={<AuthPage />} />
-
-        {/* Rutas protegidas (requieren isAuthenticated === true) */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/start" element={<StartPage />} />
-          <Route path="/onboarding" element={<OnboardingForm />} />
-          <Route path="/welcome" element={<WelcomeNewUser />} />
-
-          <Route path="/app" element={<Layout />}>
-            <Route index element={<AppHome />} />
-            <Route path="habitaciones" element={<PropertiesPage />} />
-            <Route path="inquilinos" element={<TenantsPage />} />
-            <Route path="contratos" element={<ContractsPage />} />
-            <Route path="pagos" element={<PaymentsPage />} />
-            <Route path="recordatorios" element={<RemindersPage />} />
-          </Route>
-        </Route>
-      </Routes>
-    </BrowserRouter>
   );
 }

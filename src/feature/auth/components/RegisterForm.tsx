@@ -164,9 +164,18 @@ export default function RegisterForm({ onToggle }: RegisterFormProps) {
       {/* Panel derecho (ilustración + texto) */}
       <aside className="relative hidden lg:flex flex-col bg-gradient-to-br from-zinc-800 via-zinc-900 to-zinc-950 text-white">
         <div className="flex items-center gap-3 p-6 justify-end">
-          <span className="text-sm font-semibold tracking-wide text-white">
-            Habitora
-          </span>
+          <div
+            className="flex items-center gap-2 cursor-pointer select-none"
+            onClick={() => navigate("/")}
+          >
+            <div className="h-8 w-8 rounded-md bg-white border border-gray-900 flex items-center justify-center">
+              <span className="text-gray-900 text-lg font-bold">H</span>
+            </div>
+            <span className="font-semibold text-lg tracking-tight text-white">
+              Habitora
+            </span>
+          </div>
+
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">

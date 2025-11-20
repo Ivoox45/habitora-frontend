@@ -1,5 +1,6 @@
 // src/store/useAuthStore.ts
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { AuthUser } from "@/feature/auth/types";
 
 type AuthState = {
@@ -13,43 +14,49 @@ type AuthState = {
   logout: () => void;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isAuthenticated: false,
-
-  // Se usa cuando ya tienes todos los datos básicos del usuario
-  setUser: (user) =>
-    set({
-      user,
-      isAuthenticated: true,
-    }),
-
-  // 👇 Actualiza solo el id del usuario (por ejemplo, después de checkTienePropiedades)
-  setUserId: (id) =>
-    set((state) => {
-      if (!state.user) {
-        // Si aún no hay user, no cambiamos nada
-        return state;
-      }
-
-      return {
-        user: {
-          ...state.user,
-          id,
-        },
-        isAuthenticated: true,
-      };
-    }),
-
-  setAuthenticated: (value) =>
-    set((state) => ({
-      ...state,
-      isAuthenticated: value,
-    })),
-
-  logout: () =>
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
       user: null,
       isAuthenticated: false,
+
+      // Guardar toda la info del usuario y marcarlo como autenticado
+      setUser: (user) =>
+        set({
+          user,
+          isAuthenticated: true,
+        }),
+
+      // Actualizar el ID del usuario sin perder los demás datos
+      setUserId: (id) =>
+        set((state) => {
+          if (!state.user) return state;
+
+          return {
+            user: {
+              ...state.user,
+              id,
+            },
+            isAuthenticated: true,
+          };
+        }),
+
+      setAuthenticated: (value) =>
+        set((state) => ({
+          ...state,
+          isAuthenticated: value,
+        })),
+
+      // Cerrar sesión correctamente
+      logout: () =>
+        set({
+          user: null,
+          isAuthenticated: false,
+        }),
     }),
-}));
+    {
+      name: "habitora-auth", // clave del localStorage
+      version: 1,
+    }
+  )
+);
