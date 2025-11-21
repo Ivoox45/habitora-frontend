@@ -105,7 +105,10 @@ export function TenantsTable({ propiedadId }: TenantsTableProps) {
 
               <TableCell className="text-right">
                 <div className="inline-flex items-center gap-1">
-                  <EditTenantsDialog propiedadId={propiedadId} tenant={tenant} />
+                  <EditTenantsDialog
+                    propiedadId={propiedadId}
+                    tenant={tenant}
+                  />
                   <DeleteTenantsDialog
                     propiedadId={propiedadId}
                     tenantId={tenant.id}

@@ -56,7 +56,7 @@ export function NewTenantsDialog({ propiedadId }: NewTenantsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
+        <Button className="gap-2">
           <Plus className="w-4 h-4" />
           Nuevo inquilino
         </Button>
