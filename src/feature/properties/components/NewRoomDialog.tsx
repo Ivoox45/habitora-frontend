@@ -1,6 +1,6 @@
 // src/feature/properties/components/NewRoomDialog.tsx
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,27 +33,41 @@ type NewRoomDialogProps = {
 };
 
 /**
- * Calcula información útil para validación de códigos de un piso:
- * - maxExisting: el código numérico más alto ya existente
- * - limit: último código permitido (floorNumber*100 + 8)
- * - nextSuggested: siguiente código recomendado (o null si ya llegó al límite)
+ * Calcula info útil para validación de códigos de un piso:
+ * - base: floorNumber * 100 (ej: 2 -> 200)
+ * - limit: último código permitido (..08)
+ * - usedCodes: códigos numéricos ya ocupados
  */
 function getFloorCodeInfo(floor: RoomsByFloor) {
-  const base = floor.floorNumber * 100; // ej: piso 2 -> 200
-  const limit = base + 8; // ...08 (máx. 8 habitaciones)
+  const base = floor.floorNumber * 100;
+  const limit = base + 8;
 
-  const numericCodes = floor.rooms
+  const usedCodes = floor.rooms
     .map((room) => Number(room.code))
-    .filter((n) => Number.isFinite(n));
-
-  const maxExisting = numericCodes.length ? Math.max(...numericCodes) : base;
-  const nextSuggested = maxExisting + 1;
+    .filter((n) => Number.isFinite(n) && n >= base + 1 && n <= limit);
 
   return {
-    maxExisting,
+    base,
     limit,
-    nextSuggested: nextSuggested > limit ? null : nextSuggested,
+    usedCodes,
   };
+}
+
+/**
+ * Devuelve los códigos disponibles para un piso: del .01 al .08
+ * excluyendo los ya ocupados.
+ */
+function getAvailableCodesForFloor(floor: RoomsByFloor): number[] {
+  const { base, limit, usedCodes } = getFloorCodeInfo(floor);
+  const available: number[] = [];
+
+  for (let code = base + 1; code <= limit; code++) {
+    if (!usedCodes.includes(code)) {
+      available.push(code);
+    }
+  }
+
+  return available;
 }
 
 export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
@@ -62,7 +76,7 @@ export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
   const [code, setCode] = useState("");
   const [monthlyRent, setMonthlyRent] = useState("");
 
-  // Pisos de la propiedad (para el combo)
+  // Pisos de la propiedad
   const {
     data: floors,
     isLoading: isLoadingFloors,
@@ -74,7 +88,6 @@ export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
     {
       onSuccess: () => {
         toast.success("Habitación creada correctamente");
-        // reseteamos estado del formulario
         setFloorId(null);
         setCode("");
         setMonthlyRent("");
@@ -86,27 +99,51 @@ export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
     }
   );
 
+  // Códigos disponibles según piso seleccionado
+  const availableCodes = useMemo(() => {
+    if (!floors || !floorId) return [];
+    const floor = floors.find((f) => f.floorId === floorId);
+    if (!floor) return [];
+    return getAvailableCodesForFloor(floor);
+  }, [floors, floorId]);
+
+  // Texto de ayuda con los códigos libres
+  const helperAvailableCodes = useMemo(() => {
+    if (!floors || !floorId) return "";
+    const floor = floors.find((f) => f.floorId === floorId);
+    if (!floor) return "";
+
+    const available = getAvailableCodesForFloor(floor);
+    if (!available.length) {
+      const { limit } = getFloorCodeInfo(floor);
+      return `Este piso ya tiene el máximo de habitaciones (hasta ${limit}).`;
+    }
+
+    return `Códigos libres para este piso: ${available.join(", ")}.`;
+  }, [floors, floorId]);
+
   const handleFloorChange = (value: string) => {
     const id = Number(value);
     setFloorId(id);
 
-    if (!floors) return;
+    // Resetear código si cambiamos de piso
+    setCode("");
 
+    if (!floors) return;
     const floor = floors.find((f) => f.floorId === id);
     if (!floor) return;
 
-    const { nextSuggested, limit } = getFloorCodeInfo(floor);
-
-    if (!nextSuggested) {
+    const available = getAvailableCodesForFloor(floor);
+    if (!available.length) {
+      const { limit } = getFloorCodeInfo(floor);
       toast.error(
         `Este piso ya tiene el máximo de habitaciones (hasta ${limit}).`
       );
-      setCode("");
       return;
     }
 
-    // sugerimos el siguiente código
-    setCode(String(nextSuggested));
+    // Sugerir el primer código libre
+    setCode(String(available[0]));
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -129,7 +166,7 @@ export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
     }
 
     if (!code.trim()) {
-      toast.error("El código de la habitación es obligatorio");
+      toast.error("Selecciona un código de habitación");
       return;
     }
 
@@ -139,31 +176,22 @@ export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
       return;
     }
 
-    // Validar renta
+    const available = getAvailableCodesForFloor(floor);
+    if (!available.includes(codeNumber)) {
+      toast.error(
+        `El código seleccionado no está disponible. Códigos libres: ${available.join(
+          ", "
+        )}.`
+      );
+      return;
+    }
+
     const rentNumber = Number(monthlyRent || 0);
     if (Number.isNaN(rentNumber) || rentNumber < 0) {
       toast.error("Ingresa un monto de renta válido");
       return;
     }
 
-    // Reglas del negocio: mayor al máximo y hasta ..08
-    const { maxExisting, limit } = getFloorCodeInfo(floor);
-
-    if (codeNumber <= maxExisting) {
-      toast.error(
-        `El código debe ser mayor que ${maxExisting}. Te sugerimos usar ${maxExisting + 1}.`
-      );
-      return;
-    }
-
-    if (codeNumber > limit) {
-      toast.error(
-        `El código máximo permitido para este piso es ${limit} (máximo 8 habitaciones).`
-      );
-      return;
-    }
-
-    // Si todo está OK, enviamos
     crearHabitacion({
       floorId,
       code: String(codeNumber),
@@ -186,8 +214,9 @@ export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
         <DialogHeader>
           <DialogTitle>Nueva habitación</DialogTitle>
           <DialogDescription>
-            Crea una habitación manual para esta propiedad. El código debe ser
-            mayor al último del piso y como máximo hasta ..08.
+            Crea una habitación manual para esta propiedad. Cada piso puede
+            tener como máximo 8 habitaciones (.01 a .08) y solo podrás escoger
+            códigos disponibles.
           </DialogDescription>
         </DialogHeader>
 
@@ -200,7 +229,7 @@ export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
               onValueChange={handleFloorChange}
               disabled={isLoadingFloors || isErrorFloors}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue
                   placeholder={
                     isLoadingFloors
@@ -211,11 +240,12 @@ export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
                   }
                 />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="w-full">
                 {floors?.map((floor) => (
                   <SelectItem
                     key={floor.floorId}
                     value={floor.floorId.toString()}
+                    className="w-full"
                   >
                     Piso {floor.floorNumber}
                   </SelectItem>
@@ -224,22 +254,39 @@ export function NewRoomDialog({ propertyId }: NewRoomDialogProps) {
             </Select>
           </div>
 
-          {/* Código de habitación */}
+          {/* Código de habitación (Select de códigos libres) */}
           <div className="space-y-2">
             <Label>Código de habitación</Label>
-            <Input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="Ej: 201, 302"
-              disabled={isDisabled || !floorId}
-              required
-            />
+            <Select
+              value={code || ""}
+              onValueChange={(value) => setCode(value)}
+              disabled={isDisabled || !floorId || !availableCodes.length}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecciona un código disponible" />
+              </SelectTrigger>
+              <SelectContent className="w-full">
+                {availableCodes.map((c) => (
+                  <SelectItem
+                    key={c}
+                    value={String(c)}
+                    className="w-full text-center"
+                  >
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {floorId ? helperAvailableCodes : "Selecciona primero un piso."}
+            </p>
           </div>
 
           {/* Renta mensual */}
           <div className="space-y-2">
             <Label>Renta mensual (S/)</Label>
             <Input
+              className="w-full"
               type="number"
               min={0}
               step="0.01"

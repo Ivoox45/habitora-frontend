@@ -1,17 +1,21 @@
 // src/feature/properties/pages/PropertiesPage.tsx
+
 import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 
-import { useCurrentPropertyStore } from "@/store/useCurrentPropertyStore";
-import { useRoomsByProperty } from "../hooks/useRoomsByProperty";
-
-import { NewRoomDialog } from "../components/NewRoomDialog";
 import { GridRooms } from "../components/GridRooms";
+import { NewRoomDialog } from "../components/NewRoomDialog";
 import { EditRoomDialog } from "../components/EditRoomDialog";
 import { DeleteRoomDialog } from "../components/DeleteRoomDialog";
+
+import { useCurrentPropertyStore } from "@/store/useCurrentPropertyStore";
+import { useRoomsByProperty } from "../hooks/useRoomsByProperty";
 import type { Room } from "../types";
 
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+// helper...
 const parsePropertyId = (raw?: string | null): number | null => {
   if (!raw) return null;
   const n = Number(raw);
@@ -27,21 +31,15 @@ export function PropertiesPage() {
     (params.propiedadId as string | undefined);
 
   const routePropertyId = useMemo(() => parsePropertyId(routeId), [routeId]);
-
   const { currentPropertyId } = useCurrentPropertyStore();
 
   const propiedadId = routePropertyId ?? currentPropertyId ?? null;
 
-  const [roomToEdit, setRoomToEdit] = useState<Room | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
-
-  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-
+  // ====== si no hay propiedad ======
   if (!propiedadId) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-2">Rooms</h1>
+        <h1 className="text-2xl font-semibold mb-2">Habitaciones</h1>
         <p className="text-sm text-muted-foreground flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />
           No valid property was found. Please select a property from the start
@@ -51,31 +49,12 @@ export function PropertiesPage() {
     );
   }
 
-  const {
-    data: floors,
-    isLoading,
-    isError,
-  } = useRoomsByProperty(propiedadId);
+  // ====== estado para editar / eliminar ======
+  const [roomToEdit, setRoomToEdit] = useState<Room | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-2">Rooms</h1>
-        <p className="text-sm text-muted-foreground">Loading rooms…</p>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-2">Rooms</h1>
-        <p className="text-sm text-red-500">
-          There was an error loading the rooms for this property.
-        </p>
-      </div>
-    );
-  }
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handleEditRoom = (room: Room) => {
     setRoomToEdit(room);
@@ -87,44 +66,103 @@ export function PropertiesPage() {
     setDeleteOpen(true);
   };
 
+  // ====== queries: con precio / sin precio ======
+  const {
+    data: floorsWithPrice,
+    isLoading: isLoadingWith,
+    isError: isErrorWith,
+  } = useRoomsByProperty(propiedadId, { requierePrecio: true });
+
+  const {
+    data: floorsWithoutPrice,
+    isLoading: isLoadingWithout,
+    isError: isErrorWithout,
+  } = useRoomsByProperty(propiedadId, { requierePrecio: false });
+
+  // estados combinados
+  if (isLoadingWith || isLoadingWithout) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-semibold mb-2">Habitaciones</h1>
+        <p className="text-sm text-muted-foreground">Loading rooms…</p>
+      </div>
+    );
+  }
+
+  if (isErrorWith || isErrorWithout) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-semibold mb-2">Habitaciones</h1>
+        <p className="text-sm text-red-500">
+          There was an error loading the rooms for this property.
+        </p>
+      </div>
+    );
+  }
+
+  const withPrice = floorsWithPrice ?? [];
+  const withoutPrice = floorsWithoutPrice ?? [];
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Rooms</h1>
+          <h1 className="text-2xl font-semibold">Habitaciones</h1>
           <p className="text-sm text-muted-foreground">
-            Manage the rooms associated with this property.
+            Gestiona las habitaciones de la propiedad seleccionada.
           </p>
         </div>
 
         <NewRoomDialog propertyId={propiedadId} />
       </div>
 
-      {/* Grid */}
-      <div className="space-y-4">
-        {(!floors || floors.length === 0) ? (
-          <p className="text-sm text-muted-foreground">
-            There are no rooms yet for this property.
-          </p>
-        ) : (
-          <GridRooms
-            floors={floors}
-            onEditRoom={handleEditRoom}
-            onDeleteRoom={handleDeleteRoom}
-          />
-        )}
-      </div>
+      {/* Tabs */}
+      <Tabs defaultValue="with-price" className="space-y-4">
+        {/* centrado */}
+        <TabsList className="w-full flex justify-center gap-2">
+          <TabsTrigger value="with-price">Con precio</TabsTrigger>
+          <TabsTrigger value="without-price">Sin precio</TabsTrigger>
+        </TabsList>
+
+        {/* Con precio */}
+        <TabsContent value="with-price" className="space-y-4">
+          {withPrice.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No hay habitaciones con precio registrado en esta propiedad.
+            </p>
+          ) : (
+            <GridRooms
+              floors={withPrice as any}
+              onEditRoom={handleEditRoom}
+              onDeleteRoom={handleDeleteRoom}
+            />
+          )}
+        </TabsContent>
+
+        {/* Sin precio */}
+        <TabsContent value="without-price" className="space-y-4">
+          {withoutPrice.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No hay habitaciones sin precio. Todas las habitaciones tienen
+              renta asignada.
+            </p>
+          ) : (
+            <GridRooms
+              floors={withoutPrice as any}
+              onEditRoom={handleEditRoom}
+              onDeleteRoom={handleDeleteRoom}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Dialog editar */}
       <EditRoomDialog
         propertyId={propiedadId}
         room={roomToEdit}
         open={editOpen}
-        onOpenChange={(open) => {
-          setEditOpen(open);
-          if (!open) setRoomToEdit(null);
-        }}
+        onOpenChange={setEditOpen}
       />
 
       {/* Dialog eliminar */}
@@ -132,10 +170,7 @@ export function PropertiesPage() {
         propertyId={propiedadId}
         room={roomToDelete}
         open={deleteOpen}
-        onOpenChange={(open) => {
-          setDeleteOpen(open);
-          if (!open) setRoomToDelete(null);
-        }}
+        onOpenChange={setDeleteOpen}
       />
     </div>
   );

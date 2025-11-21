@@ -18,7 +18,7 @@ const getEstadoStyles = (estado: string) => {
     return {
       label: "Ocupada",
       className:
-        "bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800/60",
+        "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700",
     };
   }
 
@@ -33,7 +33,7 @@ const getEstadoStyles = (estado: string) => {
   return {
     label: estado,
     className:
-      "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900/40 dark:text-slate-200 dark:border-slate-700",
+      "bg-neutral-100 text-neutral-700 border border-neutral-200 dark:bg-neutral-900/40 dark:text-neutral-200 dark:border-neutral-700",
   };
 };
 
@@ -72,14 +72,14 @@ export function RoomCard({
   const estadoInfo = getEstadoStyles(estado);
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 flex flex-col gap-4 dark:bg-slate-900 dark:border-slate-800">
+    <article className="rounded-2xl border border-neutral-200 bg-white shadow-sm p-5 flex flex-col gap-4 dark:bg-neutral-900 dark:border-neutral-800">
       {/* Header */}
       <header className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 text-black dark:bg-slate-800 dark:text-slate-100">
+          <div className="h-8 w-8 flex items-center justify-center rounded-full bg-neutral-100 text-black dark:bg-neutral-800 dark:text-neutral-100">
             <Building2 className="w-4 h-4" />
           </div>
-          <h3 className="font-semibold text-slate-900 dark:text-slate-50">
+          <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">
             Habitación {codigo}
           </h3>
         </div>
@@ -93,20 +93,20 @@ export function RoomCard({
 
       {/* Piso */}
       <section className="space-y-1">
-        <p className="text-xs font-medium text-slate-500 uppercase dark:text-slate-400">
+        <p className="text-xs font-medium text-neutral-500 uppercase dark:text-neutral-400">
           Piso
         </p>
-        <p className="text-sm text-slate-900 dark:text-slate-100">
+        <p className="text-sm text-neutral-900 dark:text-neutral-100">
           {getFloorLabel(numeroPiso)}
         </p>
       </section>
 
       {/* Precio mensual */}
       <section className="space-y-1">
-        <p className="text-xs font-medium text-slate-500 uppercase dark:text-slate-400">
+        <p className="text-xs font-medium text-neutral-500 uppercase dark:text-neutral-400">
           Precio mensual
         </p>
-        <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+        <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
           S/ {Number(precioRenta || 0).toFixed(2)}
         </p>
       </section>
@@ -116,7 +116,7 @@ export function RoomCard({
         <Button
           type="button"
           variant="outline"
-          className="w-full justify-center gap-2 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+          className="w-full justify-center gap-2 dark:border-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-800"
           onClick={onEdit}
         >
           <Pencil className="w-3 h-3" />

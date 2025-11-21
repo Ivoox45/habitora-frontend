@@ -9,25 +9,67 @@ import type {
   RoomsFilters,
 } from "../types";
 
+/* ===== Tipos RAW que devuelve el backend ===== */
+
+type BackendRoom = {
+  id: number;
+  propiedadId: number;
+  pisoId: number;
+  codigo: string;
+  estado: string;
+  precioRenta: string;
+};
+
+type BackendRoomsByFloor = {
+  pisoId: number;
+  numeroPiso: number;
+  habitaciones: BackendRoom[];
+};
+
+/* ===== Mapeadores backend -> frontend ===== */
+
+function mapBackendRoom(room: BackendRoom): Room {
+  return {
+    id: room.id,
+    propertyId: room.propiedadId,
+    floorId: room.pisoId,
+    code: room.codigo,
+    status: room.estado,
+    rentPrice: room.precioRenta,
+  };
+}
+
+function mapBackendRoomsByFloor(item: BackendRoomsByFloor): RoomsByFloor {
+  return {
+    floorId: item.pisoId,
+    floorNumber: item.numeroPiso,
+    rooms: (item.habitaciones ?? []).map(mapBackendRoom),
+  };
+}
+
 /**
  * GET /api/propiedades/{propiedadId}/habitaciones
  * List rooms grouped by floors for a property.
- * Optional filters: status (DISPONIBLE/OCUPADA), search (code prefix).
+ * Optional filters: status (DISPONIBLE/OCUPADA), search (code prefix),
+ * requierePrecio: true=solo con precio, false=solo sin precio.
  */
 export async function getRoomsByProperty(
   propertyId: number,
   filters?: RoomsFilters
 ): Promise<RoomsByFloor[]> {
-  const { data } = await axiosInstance.get<RoomsByFloor[]>(
+  const response = await axiosInstance.get<BackendRoomsByFloor[]>(
     `/api/propiedades/${propertyId}/habitaciones`,
     {
       params: {
         estado: filters?.status,
         search: filters?.search,
+        requierePrecio: filters?.requierePrecio,
       },
     }
   );
-  return data;
+
+  const data = response.data ?? [];
+  return data.map(mapBackendRoomsByFloor);
 }
 
 /**
@@ -35,10 +77,10 @@ export async function getRoomsByProperty(
  * List rooms by floor.
  */
 export async function getRoomsByFloor(floorId: number): Promise<Room[]> {
-  const { data } = await axiosInstance.get<Room[]>(
+  const { data } = await axiosInstance.get<BackendRoom[]>(
     `/api/habitaciones/piso/${floorId}`
   );
-  return data;
+  return (data ?? []).map(mapBackendRoom);
 }
 
 /**
@@ -49,7 +91,7 @@ export async function createRoomManual(
   propertyId: number,
   payload: CreateRoomPayload
 ): Promise<Room> {
-  const { data } = await axiosInstance.post<Room>(
+  const { data } = await axiosInstance.post<BackendRoom>(
     `/api/propiedades/${propertyId}/habitaciones/manual`,
     {
       pisoId: payload.floorId,
@@ -57,7 +99,7 @@ export async function createRoomManual(
       precioRenta: payload.rentPrice,
     }
   );
-  return data;
+  return mapBackendRoom(data);
 }
 
 /**
@@ -69,14 +111,14 @@ export async function updateRoom(
   roomId: number,
   payload: UpdateRoomPayload
 ): Promise<Room> {
-  const { data } = await axiosInstance.put<Room>(
+  const { data } = await axiosInstance.put<BackendRoom>(
     `/api/propiedades/${propertyId}/habitaciones/${roomId}`,
     {
       codigo: payload.code,
       precioRenta: payload.rentPrice,
     }
   );
-  return data;
+  return mapBackendRoom(data);
 }
 
 /**

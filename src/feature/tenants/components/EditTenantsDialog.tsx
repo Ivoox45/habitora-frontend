@@ -1,6 +1,8 @@
 // src/feature/tenants/components/EditTenantsDialog.tsx
-import { useState, useEffect } from "react";
-import type { FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
+import { Pencil } from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,14 +16,29 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil } from "lucide-react";
-import { toast } from "sonner";
 import { useUpdateTenant } from "../hooks/useUpdateTenant";
 import type { Tenant } from "../types";
 
 type EditTenantsDialogProps = {
   propiedadId: number;
   tenant: Tenant;
+};
+
+// Helpers de validación (los mismos criterios que en NewTenantsDialog)
+const isValidEmail = (value: string) => {
+  const email = value.trim();
+  if (!email) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+const isValidDni = (value: string) => {
+  return /^\d{8}$/.test(value.trim());
+};
+
+const isValidPhone = (value: string) => {
+  const phone = value.trim();
+  if (!phone) return true; // sigue siendo opcional
+  return /^\d{9}$/.test(phone);
 };
 
 export function EditTenantsDialog({
@@ -61,11 +78,37 @@ export function EditTenantsDialog({
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const nombre = nombreCompleto.trim();
+    const dni = numeroDni.trim();
+    const correo = email.trim();
+    const telefono = (telefonoWhatsapp || "").trim();
+
+    if (!nombre) {
+      toast.error("El nombre completo es obligatorio");
+      return;
+    }
+
+    if (!isValidDni(dni)) {
+      toast.error("El DNI debe tener exactamente 8 dígitos numéricos");
+      return;
+    }
+
+    if (!isValidEmail(correo)) {
+      toast.error("Ingresa un correo electrónico válido");
+      return;
+    }
+
+    if (!isValidPhone(telefono)) {
+      toast.error("El teléfono/WhatsApp debe tener exactamente 9 dígitos");
+      return;
+    }
+
     updateTenant({
-      nombreCompleto,
-      numeroDni,
-      email,
-      telefonoWhatsapp,
+      nombreCompleto: nombre,
+      numeroDni: dni,
+      email: correo,
+      telefonoWhatsapp: telefono,
     });
   };
 
@@ -86,24 +129,36 @@ export function EditTenantsDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Nombre */}
           <div className="space-y-2">
             <Label>Nombre completo</Label>
             <Input
               value={nombreCompleto}
               onChange={(e) => setNombreCompleto(e.target.value)}
               required
+              placeholder="Ej: Juan Pérez"
+              disabled={isPending}
             />
           </div>
 
+          {/* DNI */}
           <div className="space-y-2">
             <Label>Número de DNI</Label>
             <Input
               value={numeroDni}
-              onChange={(e) => setNumeroDni(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "").slice(0, 8);
+                setNumeroDni(value);
+              }}
               required
+              inputMode="numeric"
+              maxLength={8}
+              placeholder="8 dígitos"
+              disabled={isPending}
             />
           </div>
 
+          {/* Correo */}
           <div className="space-y-2">
             <Label>Correo electrónico</Label>
             <Input
@@ -111,20 +166,30 @@ export function EditTenantsDialog({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              placeholder="ejemplo@correo.com"
+              disabled={isPending}
             />
           </div>
 
+          {/* Teléfono */}
           <div className="space-y-2">
             <Label>Teléfono / WhatsApp</Label>
             <Input
-              value={telefonoWhatsapp}
-              onChange={(e) => setTelefonoWhatsapp(e.target.value)}
+              value={telefonoWhatsapp ?? ""}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "").slice(0, 9);
+                setTelefonoWhatsapp(value);
+              }}
+              inputMode="numeric"
+              maxLength={9}
+              placeholder="9 dígitos (opcional)"
+              disabled={isPending}
             />
           </div>
 
           <DialogFooter className="pt-4">
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" disabled={isPending}>
                 Cancelar
               </Button>
             </DialogClose>

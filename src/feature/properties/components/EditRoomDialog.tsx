@@ -1,6 +1,6 @@
 // src/feature/properties/components/EditRoomDialog.tsx
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -12,18 +12,79 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import type { Room } from "../types";
+import type { Room, RoomsByFloor } from "../types";
 import { useUpdateRoom } from "../hooks/useUpdateRoom";
+import { useRoomsByProperty } from "../hooks/useRoomsByProperty";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 type EditRoomDialogProps = {
   propertyId: number;
-  room: Room | null;               // habitación seleccionada
-  open: boolean;                   // estado de apertura controlado
+  room: Room | null; // habitación seleccionada
+  open: boolean; // estado de apertura controlado
   onOpenChange: (open: boolean) => void;
 };
+
+const MAX_ROOMS_PER_FLOOR = 8;
+
+/**
+ * Devuelve los códigos disponibles para una habitación concreta,
+ * en el piso de esa habitación.
+ *
+ * Reglas:
+ * - Solo códigos .01 a .08 del piso (ej: piso 2 -> 201..208).
+ * - No se repiten códigos de otras habitaciones del mismo piso.
+ * - Incluye el código actual de la habitación si entra en el rango.
+ */
+function getAvailableCodesForRoom(
+  floors: RoomsByFloor[],
+  room: Room
+): number[] {
+  const floor = floors.find((f) => f.floorId === room.floorId);
+  if (!floor) return [];
+
+  const base = floor.floorNumber * 100; // piso 2 -> 200
+  const min = base + 1;
+  const max = base + MAX_ROOMS_PER_FLOOR;
+
+  // Códigos usados por OTRAS habitaciones del piso
+  const used = new Set(
+    floor.rooms
+      .filter((r) => r.id !== room.id)
+      .map((r) => Number(r.code))
+      .filter((n) => Number.isFinite(n))
+  );
+
+  const available: number[] = [];
+
+  for (let i = 1; i <= MAX_ROOMS_PER_FLOOR; i++) {
+    const code = base + i;
+    if (!used.has(code)) {
+      available.push(code);
+    }
+  }
+
+  // Aseguramos que el código actual esté en la lista (por si acaso)
+  const currentNum = Number(room.code);
+  if (
+    Number.isFinite(currentNum) &&
+    currentNum >= min &&
+    currentNum <= max &&
+    !available.includes(currentNum)
+  ) {
+    available.push(currentNum);
+  }
+
+  return available.sort((a, b) => a - b);
+}
 
 export function EditRoomDialog({
   propertyId,
@@ -34,13 +95,36 @@ export function EditRoomDialog({
   const [code, setCode] = useState("");
   const [monthlyRent, setMonthlyRent] = useState("");
 
-  // Cuando cambie la habitación o se abra el diálogo, rellenamos los campos
+  // Traemos todos los pisos + habitaciones de la propiedad
+  const { data: floors, isLoading: isLoadingFloors } =
+    useRoomsByProperty(propertyId);
+
+  // Códigos disponibles para el piso de esta habitación
+  const availableCodes = useMemo(() => {
+    if (!room || !floors) return [];
+    return getAvailableCodesForRoom(floors, room);
+  }, [floors, room]);
+
+  // Cuando cambie la habitación / pisos / se abra el diálogo, inicializamos
   useEffect(() => {
-    if (room && open) {
-      setCode(room.code ?? "");
-      setMonthlyRent(room.rentPrice ? String(Number(room.rentPrice)) : "");
+    if (!room || !open) return;
+
+    // Renta
+    setMonthlyRent(room.rentPrice ? String(Number(room.rentPrice)) : "");
+
+    // Código: preferimos el actual si está en la lista, si no, el primero disponible
+    if (availableCodes.length === 0) {
+      setCode("");
+      return;
     }
-  }, [room, open]);
+
+    const currentNum = Number(room.code);
+    if (Number.isFinite(currentNum) && availableCodes.includes(currentNum)) {
+      setCode(String(currentNum));
+    } else {
+      setCode(String(availableCodes[0]));
+    }
+  }, [room, open, availableCodes]);
 
   const { mutate: actualizarHabitacion, isPending } = useUpdateRoom(
     propertyId,
@@ -59,8 +143,14 @@ export function EditRoomDialog({
     e.preventDefault();
     if (!room) return;
 
-    if (!code.trim()) {
-      toast.error("El código de la habitación es obligatorio");
+    if (!code) {
+      toast.error("Selecciona un código de habitación");
+      return;
+    }
+
+    const codeNumber = Number(code);
+    if (!Number.isFinite(codeNumber)) {
+      toast.error("El código de la habitación no es válido");
       return;
     }
 
@@ -72,13 +162,16 @@ export function EditRoomDialog({
 
     actualizarHabitacion({
       roomId: room.id,
-      code: code.trim(),
+      code: String(codeNumber),
       rentPrice: rentNumber,
     });
   };
 
-  // Si no hay habitación seleccionada, no mostramos nada
+  // Si no hay habitación seleccionada, no renderizamos el diálogo
   if (!room) return null;
+
+  const isCodeDisabled =
+    isPending || isLoadingFloors || !availableCodes || availableCodes.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -92,16 +185,35 @@ export function EditRoomDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Código de habitación */}
+          {/* Código de habitación (Select con códigos disponibles) */}
           <div className="space-y-2">
             <Label>Código de habitación</Label>
-            <Input
+            <Select
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="Ej: 201, 302"
-              disabled={isPending}
-              required
-            />
+              onValueChange={setCode}
+              disabled={isCodeDisabled}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={
+                    isLoadingFloors
+                      ? "Cargando códigos..."
+                      : "Selecciona un código disponible"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent className="w-full">
+                {availableCodes.map((c) => (
+                  <SelectItem key={c} value={String(c)}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Solo se muestran códigos disponibles para este piso (.01 hasta
+              .08). Si ya no hay códigos libres, no podrás cambiar el código.
+            </p>
           </div>
 
           {/* Renta mensual */}
@@ -127,7 +239,7 @@ export function EditRoomDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || !code}>
               {isPending ? "Guardando..." : "Guardar cambios"}
             </Button>
           </DialogFooter>

@@ -39,9 +39,12 @@ export type UpdateRoomPayload = {
   rentPrice: number;
 };
 
+// src/feature/properties/types.ts
+
 export type RoomsFilters = {
   status?: RoomStatus;
   search?: string;
+  requierePrecio?: boolean;
 };
 
 // (Opcional) Aliases para no romper código viejo:
