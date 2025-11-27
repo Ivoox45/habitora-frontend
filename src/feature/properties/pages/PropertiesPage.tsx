@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Home } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 import { GridRooms } from "../components/GridRooms";
 import { NewRoomDialog } from "../components/NewRoomDialog";
@@ -128,9 +129,12 @@ export function PropertiesPage() {
         {/* Con precio */}
         <TabsContent value="with-price" className="space-y-4">
           {withPrice.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No hay habitaciones con precio registrado en esta propiedad.
-            </p>
+            <EmptyState
+              icon={Home}
+              title="No hay habitaciones con precio"
+              description="Aún no has configurado precios para tus habitaciones. Asigna precios para poder crear contratos de alquiler."
+              compact
+            />
           ) : (
             <GridRooms
               floors={withPrice as any}
@@ -143,10 +147,13 @@ export function PropertiesPage() {
         {/* Sin precio */}
         <TabsContent value="without-price" className="space-y-4">
           {withoutPrice.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No hay habitaciones sin precio. Todas las habitaciones tienen
-              renta asignada.
-            </p>
+            <div className="text-center py-12 px-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 mb-4">
+                <span className="text-3xl">✅</span>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">¡Excelente!</h3>
+              <p className="text-sm text-muted-foreground">Todas las habitaciones tienen precio asignado.</p>
+            </div>
           ) : (
             <GridRooms
               floors={withoutPrice as any}

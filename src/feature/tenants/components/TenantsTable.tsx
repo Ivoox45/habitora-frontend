@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { useTenants } from "../hooks/useTenants";
 import type { Tenant } from "../types";
+import { EmptyState } from "@/components/EmptyState";
+import { Users } from "lucide-react";
 
 import {
   Table,
@@ -72,10 +74,12 @@ export function TenantsTable({ propiedadId }: TenantsTableProps) {
 
   if (tenants.length === 0) {
     return (
-      <p className="mt-4 text-sm text-muted-foreground">
-        No hay inquilinos registrados en esta propiedad. Usa el botón
-        &quot;Nuevo inquilino&quot; para agregar el primero.
-      </p>
+      <EmptyState
+        icon={Users}
+        title="No hay inquilinos registrados"
+        description="Agrega inquilinos a tu propiedad para poder crear contratos de alquiler y gestionar pagos."
+        compact
+      />
     );
   }
 

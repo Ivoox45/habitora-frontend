@@ -51,32 +51,19 @@ export const useAuthStore = create<AuthState>()(
         })),
 
       setToken: (token) =>
-        set((state) => {
-          // persist token to localStorage for axios init
-          try {
-            if (token) {
-              localStorage.setItem("habitora-access-token", token);
-            } else {
-              localStorage.removeItem("habitora-access-token");
-            }
-          } catch (e) {
-            // ignore
-          }
-
-          return {
-            ...state,
-            token,
-          };
-        }),
+        set((state) => ({
+          ...state,
+          token,
+        })),
 
       // Cerrar sesión correctamente
       logout: () => {
+        // Limpiar última actividad
         try {
-          localStorage.removeItem("habitora-access-token");
-        } catch (e) {
-          // ignore
-        }
-
+          localStorage.removeItem("habitora-last-activity");
+          localStorage.removeItem("habitora-last-route");
+        } catch {}
+        
         set({
           user: null,
           isAuthenticated: false,
@@ -86,7 +73,14 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "habitora-auth", // clave del localStorage
-      version: 1,
+      version: 2, // Incrementar versión para limpiar cache viejo
+      // Solo persistir user e isAuthenticated, NO el token
+      // El token se maneja en memoria y se renueva con refresh token
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        // token NO se persiste → solo en memoria por seguridad
+      }),
     }
   )
 );

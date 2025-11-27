@@ -32,19 +32,37 @@ export default function LoginForm({ onToggle }: LoginFormProps) {
     isPending,
     error,
   } = useLogin({
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       toast.success("Inicio de sesión correcto. ¡Bienvenido de nuevo! 🙌");
 
       try {
+        // Asegurarse de que el token esté guardado primero
+        if (data && typeof data === "object" && "accessToken" in data) {
+          useAuthStore.getState().setToken(data.accessToken);
+        }
+
+        // Obtener info del usuario y propiedades
         const { usuarioId, tienePropiedades } = await checkTienePropiedades();
+        
+        // Validar que usuarioId es un número válido
+        if (!usuarioId || typeof usuarioId !== "number") {
+          throw new Error("ID de usuario inválido");
+        }
+
         const usuario = await getUsuarioById(usuarioId);
 
+        // Guardar usuario completo en el store
         setUser({
           id: usuario.id,
           nombreCompleto: usuario.nombreCompleto,
           email: usuario.email,
           telefonoWhatsapp: usuario.telefonoWhatsapp,
         });
+
+        // Inicializar última actividad
+        try {
+          localStorage.setItem("habitora-last-activity", String(Date.now()));
+        } catch {}
 
         if (!tienePropiedades) {
           navigate("/onboarding");

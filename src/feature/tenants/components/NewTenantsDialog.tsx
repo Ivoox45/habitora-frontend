@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { useCreateTenant } from "../hooks/useCreateTenant";
+import { lookupTenantNameByDni } from "../api/tenants";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -41,10 +42,11 @@ const isValidPhone = (value: string) => {
 
 export function NewTenantsDialog({ propiedadId }: NewTenantsDialogProps) {
   const [open, setOpen] = useState(false);
-  const [nombreCompleto, setNombreCompleto] = useState("");
   const [numeroDni, setNumeroDni] = useState("");
   const [email, setEmail] = useState("");
   const [telefonoWhatsapp, setTelefonoWhatsapp] = useState("");
+  const [nombreCompleto, setNombreCompleto] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const { mutate: createTenant, isPending } = useCreateTenant(propiedadId, {
     onSuccess: () => {
@@ -63,15 +65,9 @@ export function NewTenantsDialog({ propiedadId }: NewTenantsDialogProps) {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const nombre = nombreCompleto.trim();
     const dni = numeroDni.trim();
     const correo = email.trim();
     const telefono = telefonoWhatsapp.trim();
-
-    if (!nombre) {
-      toast.error("El nombre completo es obligatorio");
-      return;
-    }
 
     if (!isValidDni(dni)) {
       toast.error("El DNI debe tener exactamente 8 dígitos numéricos");
@@ -89,10 +85,11 @@ export function NewTenantsDialog({ propiedadId }: NewTenantsDialogProps) {
     }
 
     createTenant({
-      nombreCompleto: nombre,
       numeroDni: dni,
       email: correo,
       telefonoWhatsapp: telefono,
+      // Enviar nombre si el usuario lo completó; caso contrario, el backend lo resuelve por DNI
+      nombreCompleto: nombreCompleto.trim() || undefined,
     });
   };
 
@@ -114,18 +111,6 @@ export function NewTenantsDialog({ propiedadId }: NewTenantsDialogProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Nombre */}
-          <div className="space-y-2">
-            <Label>Nombre completo</Label>
-            <Input
-              value={nombreCompleto}
-              onChange={(e) => setNombreCompleto(e.target.value)}
-              required
-              placeholder="Ej: Juan Pérez"
-              disabled={isPending}
-            />
-          </div>
-
           {/* DNI */}
           <div className="space-y-2">
             <Label>Número de DNI</Label>
@@ -140,6 +125,60 @@ export function NewTenantsDialog({ propiedadId }: NewTenantsDialogProps) {
               inputMode="numeric"
               maxLength={8}
               placeholder="8 dígitos"
+              disabled={isPending}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && isValidDni(numeroDni)) {
+                  e.preventDefault();
+                  setIsVerifying(true);
+                  try {
+                    const res = await lookupTenantNameByDni(numeroDni);
+                    if (res?.nombreCompleto) {
+                      setNombreCompleto(res.nombreCompleto);
+                      toast.success("Nombre encontrado y completado");
+                    } else {
+                      toast.error("No se encontró nombre para este DNI");
+                    }
+                  } catch {
+                    toast.error("Error al verificar DNI");
+                  } finally {
+                    setIsVerifying(false);
+                  }
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!isValidDni(numeroDni) || isVerifying || isPending}
+              onClick={async () => {
+                setIsVerifying(true);
+                try {
+                  const res = await lookupTenantNameByDni(numeroDni);
+                  if (res?.nombreCompleto) {
+                    setNombreCompleto(res.nombreCompleto);
+                    toast.success("Nombre encontrado y completado");
+                  } else {
+                    toast.error("No se encontró nombre para este DNI");
+                  }
+                } catch {
+                  toast.error("Error al verificar DNI");
+                } finally {
+                  setIsVerifying(false);
+                }
+              }}
+            >
+              {isVerifying ? "Verificando..." : "Verificar nombre"}
+            </Button>
+          </div>
+
+          {/* Nombre (opcional - se completa automáticamente por DNI si se omite) */}
+          <div className="space-y-2">
+            <Label>Nombre completo (opcional)</Label>
+            <Input
+              value={nombreCompleto}
+              onChange={(e) => setNombreCompleto(e.target.value)}
+              placeholder="Se completará automáticamente por DNI"
               disabled={isPending}
             />
           </div>

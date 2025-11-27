@@ -24,8 +24,19 @@ export const useCreateContract = (
     mutationFn: (payload) => crearContrato(propertyId, payload),
 
     onSuccess: (...args) => {
+      // Refrescar listas relacionadas para que la UI se actualice sin recargar
       queryClient.invalidateQueries({
         queryKey: ["contracts", "by-property", propertyId],
+      });
+
+      // Inquilinos disponibles (al crear contrato, el inquilino deja de estar disponible)
+      queryClient.invalidateQueries({
+        queryKey: ["contracts", "tenants-by-property", propertyId],
+      });
+
+      // Habitaciones disponibles (la habitación pasa a OCUPADA)
+      queryClient.invalidateQueries({
+        queryKey: ["contracts", "available-rooms", propertyId],
       });
 
       options?.onSuccess?.(
@@ -42,6 +53,14 @@ export const useCreateContract = (
     onSettled: (...args) => {
       queryClient.invalidateQueries({
         queryKey: ["contracts", "by-property", propertyId],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["contracts", "tenants-by-property", propertyId],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["contracts", "available-rooms", propertyId],
       });
 
       options?.onSettled?.(

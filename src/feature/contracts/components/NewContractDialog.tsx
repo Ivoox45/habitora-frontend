@@ -123,6 +123,10 @@ export function NewContractDialog({ propertyId }: NewContractDialogProps) {
     },
   });
 
+  // Si no hay inquilinos disponibles o no hay habitaciones disponibles con precio,
+  // deshabilitamos el botón de "Crear contrato" para evitar abrir un diálogo inútil.
+  const canCreate = (tenants?.length ?? 0) > 0 && roomOptions.length > 0 && !isLoadingTenants && !isLoadingRooms && !isErrorTenants && !isErrorRooms;
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -171,7 +175,7 @@ export function NewContractDialog({ propertyId }: NewContractDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
+        <Button size="sm" className="gap-2" disabled={!canCreate} title={!canCreate ? "No hay inquilinos u habitaciones disponibles" : undefined}>
           <Plus className="w-4 h-4" />
           Crear contrato
         </Button>

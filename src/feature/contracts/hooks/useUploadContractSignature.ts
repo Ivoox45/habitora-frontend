@@ -43,11 +43,19 @@ export const useUploadContractSignature = (
     // -------------------------------------------------------
     onSuccess: (...args) => {
       const [data] = args;
-      // refrescar datos
+      
+      // Invalidar el detalle específico del contrato
       queryClient.invalidateQueries({
         queryKey: ["contracts", "detail", propertyId, data.id],
       });
 
+      // Invalidar la firma del contrato
+      queryClient.invalidateQueries({
+        queryKey: ["contracts", "signature", propertyId, data.id],
+      });
+
+      // Invalidar TODAS las listas de contratos de esta propiedad 
+      // (incluye todas las combinaciones de filtros)
       queryClient.invalidateQueries({
         queryKey: ["contracts", "by-property", propertyId],
       });

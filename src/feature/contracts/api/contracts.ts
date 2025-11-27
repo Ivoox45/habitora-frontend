@@ -116,12 +116,25 @@ export async function downloadContractSignatureAsBlob(
   propertyId: number,
   contractId: number
 ): Promise<Blob> {
-  const response = await axiosInstance.get(
-    `/api/propiedades/${propertyId}/contratos/${contractId}/firma`,
-    {
-      responseType: "blob",
-    }
-  );
+  const url = `/api/propiedades/${propertyId}/contratos/${contractId}/firma`;
+  console.log("📡 Requesting signature from URL:", url);
+  console.log("📡 Parameters:", { 
+    propertyId, 
+    contractId, 
+    propertyIdType: typeof propertyId, 
+    contractIdType: typeof contractId 
+  });
+  
+  const response = await axiosInstance.get(url, {
+    responseType: "blob",
+  });
+  
+  console.log("📡 Response received:", { 
+    status: response.status, 
+    contentType: response.headers['content-type'],
+    size: response.data.size 
+  });
+  
   return response.data;
 }
 

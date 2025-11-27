@@ -12,11 +12,13 @@ import {
 } from "@/components/ui/sidebar";
 
 import { useCurrentPropertyStore } from "@/store/useCurrentPropertyStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { usePropiedadById } from "@/feature/properties/hooks/usePropiedadById";
 
 export default function Layout() {
   const { propertyId } = useParams<{ propertyId: string }>();
   const navigate = useNavigate();
+  const token = useAuthStore((s) => s.token);
 
   const { currentPropertyId, setCurrentProperty, clearCurrentProperty } =
     useCurrentPropertyStore();
@@ -35,8 +37,10 @@ export default function Layout() {
   }, [isInvalidParam, clearCurrentProperty, navigate]);
 
   // 2️⃣ Preguntamos al backend si esa propiedad existe y es del usuario
+  // Pero SOLO si ya tenemos token (evita 403 en reload mientras AuthBootstrap renueva)
+  const shouldFetch = !isInvalidParam && numericId !== null && !!token;
   const { data, isLoading, isError } = usePropiedadById(
-    isInvalidParam ? null : numericId
+    shouldFetch ? numericId : null
   );
 
   useEffect(() => {
@@ -64,7 +68,12 @@ export default function Layout() {
     navigate,
   ]);
 
-  if (isInvalidParam || isLoading || isError) {
+  // Mostrar spinner mientras:
+  // - El parámetro es inválido (se redirigirá)
+  // - No hay token todavía (AuthBootstrap renovando)
+  // - El query está cargando
+  // - Hubo error (se redirigirá)
+  if (isInvalidParam || !token || isLoading || isError) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Spinner />

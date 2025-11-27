@@ -12,7 +12,7 @@ export function HeroSection() {
 
   const goToAppOrStart = () => {
     if (!isAuthenticated) return navigate("/auth");
-    if (currentPropertyId) navigate("/app");
+    if (currentPropertyId) navigate(`/app/${currentPropertyId}`);
     else navigate("/start");
   };
 

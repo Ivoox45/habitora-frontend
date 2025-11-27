@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { RoomCard } from "./RoomCard";
 import type { Room, RoomsByFloor } from "../types";
+import { EmptyState } from "@/components/EmptyState";
+import { Home } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -36,9 +38,12 @@ export function GridRooms({ floors, onEditRoom, onDeleteRoom }: GridRoomsProps) 
 
   if (safeFloors.length === 0 || roomsRaw.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Aún no hay habitaciones registradas para esta propiedad.
-      </p>
+      <EmptyState
+        icon={Home}
+        title="No hay habitaciones registradas"
+        description="Comienza agregando habitaciones a tu propiedad para gestionar alquileres."
+        compact
+      />
     );
   }
 

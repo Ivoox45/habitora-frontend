@@ -26,8 +26,7 @@ export const useFinalizeContract = (
     mutationFn: ({ contractId }) =>
       finalizarContrato(propertyId, contractId),
 
-    onSuccess: (...args) => {
-      const [data] = args as [ContratoDetalle, Variables, unknown];
+    onSuccess: (data) => {
 
       queryClient.invalidateQueries({
         queryKey: ["contracts", "by-property", propertyId],
@@ -37,25 +36,45 @@ export const useFinalizeContract = (
         queryKey: ["contracts", "detail", propertyId, data.id],
       });
 
-      options?.onSuccess?.(
-        ...(args as Parameters<NonNullable<typeof options.onSuccess>>)
-      );
+      // Al finalizar, la habitación vuelve a estar disponible
+      queryClient.invalidateQueries({
+        queryKey: ["contracts", "available-rooms", propertyId],
+      });
+
+      // El inquilino vuelve a estar disponible para nuevos contratos
+      queryClient.invalidateQueries({
+        queryKey: ["contracts", "tenants-by-property", propertyId],
+      });
+
+      // Invalidar facturas ya que se cancelaron las pendientes
+      queryClient.invalidateQueries({
+        queryKey: ["facturas", propertyId],
+      });
+
+      // user-provided onSuccess will be handled by mutation spread below if needed
     },
 
-    onError: (...args) => {
-      options?.onError?.(
-        ...(args as Parameters<NonNullable<typeof options.onError>>)
-      );
-    },
+    onError: () => {},
 
-    onSettled: (...args) => {
+    onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: ["contracts", "by-property", propertyId],
       });
 
-      options?.onSettled?.(
-        ...(args as Parameters<NonNullable<typeof options.onSettled>>)
-      );
+      queryClient.invalidateQueries({
+        queryKey: ["contracts", "available-rooms", propertyId],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["contracts", "tenants-by-property", propertyId],
+      });
+
+      // Invalidar facturas
+      queryClient.invalidateQueries({
+        queryKey: ["facturas", propertyId],
+      });
+
+      // user-provided onSettled will be handled by mutation spread below if needed
     },
 
     ...(options ?? {}),

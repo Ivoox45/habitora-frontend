@@ -1,5 +1,8 @@
 // src/feature/contracts/components/ContractsTable.tsx
 
+import { useState } from "react";
+import { FileText } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import {
   Table,
   TableBody,
@@ -10,6 +13,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AlertTriangle } from "lucide-react";
 import type { ContratoListado } from "../types";
 
 type ContractsTableProps = {
@@ -55,19 +67,40 @@ export function ContractsTable({
   onFinalize,
   finalizingId,
 }: ContractsTableProps) {
+  const [contractToFinalize, setContractToFinalize] = useState<ContratoListado | null>(null);
+
+  const handleFinalizeClick = (contract: ContratoListado) => {
+    setContractToFinalize(contract);
+  };
+
+  const handleConfirmFinalize = () => {
+    if (contractToFinalize) {
+      onFinalize?.(contractToFinalize.id);
+      setContractToFinalize(null);
+    }
+  };
+
+  const handleCancelFinalize = () => {
+    setContractToFinalize(null);
+  };
+
   if (!contracts.length) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No hay contratos registrados para esta propiedad.
-      </p>
+      <EmptyState
+        icon={FileText}
+        title="No hay contratos registrados"
+        description="Crea contratos de alquiler para tus inquilinos y gestiona automáticamente los pagos mensuales."
+        compact
+      />
     );
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <Table>
+    <>
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <Table>
         <TableHeader>
-          <TableRow className="bg-slate-50">
+          <TableRow>
             <TableHead>Estado</TableHead>
             <TableHead>Inquilino</TableHead>
             <TableHead>DNI</TableHead>
@@ -117,7 +150,7 @@ export function ContractsTable({
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => onFinalize?.(c.id)}
+                      onClick={() => handleFinalizeClick(c)}
                       disabled={isFinalizing}
                     >
                       {isFinalizing ? "Finalizando..." : "Finalizar"}
@@ -130,5 +163,47 @@ export function ContractsTable({
         </TableBody>
       </Table>
     </div>
+
+    <Dialog open={!!contractToFinalize} onOpenChange={handleCancelFinalize}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            ¿Finalizar contrato?
+          </DialogTitle>
+          <DialogDescription className="space-y-3 pt-2">
+            <p>
+              Estás a punto de finalizar el contrato de{" "}
+              <span className="font-semibold">
+                {contractToFinalize?.inquilinoNombre}
+              </span>{" "}
+              en la habitación{" "}
+              <span className="font-semibold">
+                {contractToFinalize?.habitacionCodigo}
+              </span>
+              .
+            </p>
+            <p className="text-sm">
+              Esta acción marcará el contrato como{" "}
+              <span className="font-semibold">cancelado</span>, liberará la
+              habitación y <span className="font-semibold">cancelará todas las
+              facturas pendientes</span> asociadas.
+            </p>
+            <p className="text-sm font-medium text-destructive">
+              Esta acción no se puede deshacer.
+            </p>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleCancelFinalize}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" onClick={handleConfirmFinalize}>
+            Sí, finalizar contrato
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
   );
 }

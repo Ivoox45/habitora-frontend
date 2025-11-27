@@ -14,7 +14,7 @@ export function CallToActionSection() {
       navigate("/auth");
       return;
     }
-    if (currentPropertyId) navigate("/app");
+    if (currentPropertyId) navigate(`/app/${currentPropertyId}`);
     else navigate("/start");
   };
 

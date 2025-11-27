@@ -1,16 +1,41 @@
-export type PaymentStatus = "PENDIENTE" | "PAGADO" | "ANULADO";
+export type EstadoFactura = "ABIERTA" | "PAGADA" | "VENCIDA" | "CANCELADA";
 
-export type PaymentMethod = "EFECTIVO" | "YAPE" | "PLIN" | "TRANSFERENCIA";
+export type MetodoPago = "EFECTIVO" | "YAPE" | "PLIN" | "TRANSFERENCIA";
 
-export type PaymentInstallment = {
-  id: string;
-  contractId: number;
-  tenantName: string;
-  roomCode: string;
-  monthLabel: string;   // Ej: "Junio 2025"
-  dueDate: string;      // ISO: "2025-06-21"
-  amount: number;
-  status: PaymentStatus;
-  method?: PaymentMethod | null;
-  paidAt?: string | null;
-};
+export interface Factura {
+  id: number;
+  contratoId: number;
+  inquilinoId: number;
+  inquilinoNombre: string;
+  habitacionId: number;
+  habitacionCodigo: string;
+  periodoInicio: string; // yyyy-MM-dd
+  periodoFin: string;
+  fechaVencimiento: string;
+  montoRenta: number;
+  estado: EstadoFactura;
+  esPagada: boolean;
+  esVencida: boolean;
+  diasRetraso: number;
+}
+
+export interface Pago {
+  id: number;
+  facturaId: number;
+  contratoId: number;
+  inquilinoId: number;
+  inquilinoNombre: string;
+  habitacionId: number;
+  habitacionCodigo: string;
+  mes: string; // "Junio 2025"
+  fechaPago: string;
+  monto: number;
+  metodo: string;
+  estado: string;
+}
+
+export interface PagoCreateRequest {
+  fechaPago: string; // yyyy-MM-dd
+  monto: number;
+  metodo: MetodoPago;
+}

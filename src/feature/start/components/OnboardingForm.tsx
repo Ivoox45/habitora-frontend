@@ -41,6 +41,10 @@ export default function OnboardingForm() {
   const { mutate: completarOnboarding, isPending } = useOnboarding({
     onSuccess: () => {
       toast.success("Propiedad y habitaciones creadas correctamente ✨");
+      // Limpiar la bandera de nuevo usuario al completar onboarding
+      try {
+        sessionStorage.removeItem('habitora-new-user');
+      } catch {}
       navigate("/start");
     },
     onError: () => {
@@ -93,7 +97,13 @@ export default function OnboardingForm() {
     });
   };
 
-  const handleBackToStart = () => navigate("/start");
+  const handleBackToStart = () => {
+    // Limpiar la bandera de nuevo usuario si cancela
+    try {
+      sessionStorage.removeItem('habitora-new-user');
+    } catch {}
+    navigate("/start");
+  };
 
   // ========= Clases dependientes del tema (memo) =========
 

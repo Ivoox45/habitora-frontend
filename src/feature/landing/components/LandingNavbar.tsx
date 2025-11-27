@@ -18,7 +18,7 @@ export function LandingNavbar() {
     }
 
     if (currentPropertyId) {
-      navigate("/app");
+      navigate(`/app/${currentPropertyId}`);
     } else {
       navigate("/start");
     }

@@ -49,6 +49,15 @@ export async function createTenant(
   return data;
 }
 
+// DNI lookup endpoint to verify and autofill name before creating
+export async function lookupTenantNameByDni(dni: string): Promise<{ dni: string; nombreCompleto: string }>{
+  const response = await axiosInstance.get<{ dni: string; nombreCompleto: string }>(
+    `/api/dni/lookup`,
+    { params: { dni } }
+  );
+  return response.data;
+}
+
 /**
  * Actualiza datos de un inquilino.
  * PUT /api/propiedades/{propiedadId}/inquilinos/{id}

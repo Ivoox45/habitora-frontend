@@ -8,10 +8,10 @@ export type Tenant = {
 };
 
 export type CreateTenantPayload = {
-  nombreCompleto: string;
   numeroDni: string;
   email: string;
   telefonoWhatsapp: string;
+  nombreCompleto?: string; // opcional: el backend lo completa desde DNI si no se envía
 };
 
 export type UpdateTenantPayload = {

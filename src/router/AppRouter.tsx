@@ -1,5 +1,6 @@
 // src/router/AppRouter.tsx
 
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 
@@ -19,9 +20,21 @@ import WelcomeNewUser from "@/feature/start/components/WelcomeNewUser";
 
 import ProtectedRoute from "@/router/ProtectedRoute";
 import StartLayout from "@/feature/start/layout/StartLayout";
+import AuthBootstrap from "@/router/AuthBootstrap";
 
 function AppRouterInner() {
   const location = useLocation();
+
+  // Guardar la última ruta visitada (solo rutas protegidas permanentes)
+  useEffect(() => {
+    // Solo guardar rutas del app y start, NO las de onboarding temporal
+    if (location.pathname.startsWith('/app/') || 
+        location.pathname === '/start') {
+      try {
+        localStorage.setItem('habitora-last-route', location.pathname);
+      } catch {}
+    }
+  }, [location.pathname]);
 
   return (
     <AnimatePresence mode="wait">
@@ -57,7 +70,9 @@ function AppRouterInner() {
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <AppRouterInner />
+      <AuthBootstrap>
+        <AppRouterInner />
+      </AuthBootstrap>
     </BrowserRouter>
   );
 }

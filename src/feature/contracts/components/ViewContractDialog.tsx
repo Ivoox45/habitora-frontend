@@ -25,6 +25,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useContractById } from "../hooks/useContractById";
 import { useContractSignature } from "../hooks/useContractSignature";
+import { useTheme } from "@/components/theme-provider";
+import { cn } from "@/lib/utils";
 
 type ViewContractDialogProps = {
     propertyId: number;
@@ -41,19 +43,36 @@ export default function ViewContractDialog({
     onOpenChange,
     onSign,
 }: ViewContractDialogProps) {
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
+    
     const { data: contract, isLoading, isError } = useContractById(
         propertyId,
-        contractId
+        contractId,
+        open // Solo cargar cuando el diálogo está abierto
     );
 
     console.log("ViewContractDialog render:", { open, contractId, isLoading, isError, contract });
 
-    const { data: signatureUrl, isLoading: isLoadingSignature } =
+    const shouldLoadSignature = !!contract?.tieneFirma && open;
+    console.log("📝 Signature loading conditions:", { 
+        tieneFirma: contract?.tieneFirma, 
+        open, 
+        shouldLoad: shouldLoadSignature 
+    });
+
+    const { data: signatureUrl, isLoading: isLoadingSignature, error: signatureError } =
         useContractSignature(
             propertyId,
             contractId,
-            !!contract?.tieneFirma && open
+            shouldLoadSignature
         );
+
+    console.log("🖼️ Signature state:", { 
+        signatureUrl, 
+        isLoadingSignature, 
+        signatureError 
+    });
 
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return "-";
@@ -102,7 +121,7 @@ export default function ViewContractDialog({
             <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-primary" />
+                        <FileText className="w-5 h-5 text-muted-foreground" />
                         Detalle del Contrato
                     </DialogTitle>
                     <DialogDescription>
@@ -110,7 +129,11 @@ export default function ViewContractDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                {isLoading ? (
+                {!contractId || !open ? (
+                    <div className="py-8 text-center text-muted-foreground">
+                        Selecciona un contrato para ver sus detalles.
+                    </div>
+                ) : isLoading ? (
                     <div className="space-y-4 py-4">
                         <div className="flex items-center gap-4">
                             <Skeleton className="h-12 w-12 rounded-full" />
@@ -122,13 +145,22 @@ export default function ViewContractDialog({
                         <Skeleton className="h-[200px] w-full rounded-xl" />
                     </div>
                 ) : isError || !contract ? (
-                    <div className="py-8 text-center text-muted-foreground">
-                        No se pudo cargar la información del contrato.
+                    <div className="py-8 text-center space-y-3">
+                        <p className="text-muted-foreground">
+                            No se pudo cargar la información del contrato.
+                        </p>
+                        <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            Cerrar
+                        </Button>
                     </div>
                 ) : (
                     <div className="space-y-6 py-2">
                         {/* Header Status */}
-                        <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border">
+                        <div className="flex items-center justify-between bg-muted/50 p-4 rounded-lg border">
                             <div className="space-y-1">
                                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                     Estado del contrato
@@ -148,11 +180,11 @@ export default function ViewContractDialog({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Inquilino */}
                             <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                                    <User className="w-4 h-4" />
+                                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                    <User className="w-4 h-4 text-muted-foreground" />
                                     Inquilino
                                 </div>
-                                <div className="bg-white border rounded-lg p-3 space-y-2 text-sm">
+                                <div className="bg-card border rounded-lg p-3 space-y-2 text-sm">
                                     <div>
                                         <p className="text-muted-foreground text-xs">Nombre Completo</p>
                                         <p className="font-medium">{contract.inquilinoNombre}</p>
@@ -176,11 +208,11 @@ export default function ViewContractDialog({
 
                             {/* Habitación */}
                             <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                                    <Home className="w-4 h-4" />
+                                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                    <Home className="w-4 h-4 text-muted-foreground" />
                                     Habitación
                                 </div>
-                                <div className="bg-white border rounded-lg p-3 space-y-2 text-sm">
+                                <div className="bg-card border rounded-lg p-3 space-y-2 text-sm">
                                     <div>
                                         <p className="text-muted-foreground text-xs">Habitación</p>
                                         <p className="font-medium">{contract.habitacionCodigo}</p>
@@ -206,8 +238,8 @@ export default function ViewContractDialog({
                         {/* Detalles del Contrato */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                                    <Calendar className="w-4 h-4" />
+                                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                    <Calendar className="w-4 h-4 text-muted-foreground" />
                                     Vigencia
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -223,8 +255,8 @@ export default function ViewContractDialog({
                             </div>
 
                             <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                                    <CreditCard className="w-4 h-4" />
+                                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                    <CreditCard className="w-4 h-4 text-muted-foreground" />
                                     Pagos
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -242,23 +274,43 @@ export default function ViewContractDialog({
                             <>
                                 <Separator />
                                 <div className="space-y-3">
-                                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                                        <ImageIcon className="w-4 h-4" />
+                                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                        <ImageIcon className="w-4 h-4 text-muted-foreground" />
                                         Firma del Inquilino
                                     </div>
-                                    <div className="bg-slate-50 border rounded-lg p-4 flex justify-center items-center min-h-[120px]">
+                                    <div className="bg-muted/50 border rounded-lg p-4 flex flex-col justify-center items-center min-h-[120px]">
                                         {isLoadingSignature ? (
-                                            <Skeleton className="h-24 w-48" />
+                                            <div className="space-y-2 text-center">
+                                                <Skeleton className="h-24 w-48 mx-auto" />
+                                                <p className="text-xs text-muted-foreground">Cargando firma...</p>
+                                            </div>
                                         ) : signatureUrl ? (
                                             <img
                                                 src={signatureUrl}
                                                 alt="Firma del inquilino"
-                                                className="max-h-32 object-contain"
+                                                className={cn(
+                                                    "max-h-32 object-contain",
+                                                    isDark && "invert"
+                                                )}
+                                                onError={(e) => {
+                                                    console.error("❌ Error loading image:", e);
+                                                    console.error("Image src:", signatureUrl);
+                                                }}
+                                                onLoad={() => {
+                                                    console.log("✅ Image loaded successfully");
+                                                }}
                                             />
                                         ) : (
-                                            <p className="text-sm text-muted-foreground">
-                                                No se pudo cargar la firma.
-                                            </p>
+                                            <div className="text-center space-y-2">
+                                                <p className="text-sm text-muted-foreground">
+                                                    No se pudo cargar la firma.
+                                                </p>
+                                                {signatureError && (
+                                                    <p className="text-xs text-destructive">
+                                                        Error: {signatureError instanceof Error ? signatureError.message : "Error desconocido"}
+                                                    </p>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </div>

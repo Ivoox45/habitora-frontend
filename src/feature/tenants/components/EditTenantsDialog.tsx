@@ -3,6 +3,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 
+import { lookupTenantNameByDni } from "../api/tenants";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -52,6 +53,7 @@ export function EditTenantsDialog({
   const [telefonoWhatsapp, setTelefonoWhatsapp] = useState(
     tenant.telefonoWhatsapp
   );
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Cuando abra el modal, sincronizamos valores por si el tenant cambió
   useEffect(() => {
@@ -155,7 +157,50 @@ export function EditTenantsDialog({
               maxLength={8}
               placeholder="8 dígitos"
               disabled={isPending}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && isValidDni(numeroDni)) {
+                  e.preventDefault();
+                  setIsVerifying(true);
+                  try {
+                    const res = await lookupTenantNameByDni(numeroDni);
+                    if (res?.nombreCompleto) {
+                      setNombreCompleto(res.nombreCompleto);
+                      toast.success("Nombre encontrado y completado");
+                    } else {
+                      toast.error("No se encontró nombre para este DNI");
+                    }
+                  } catch {
+                    toast.error("Error al verificar DNI");
+                  } finally {
+                    setIsVerifying(false);
+                  }
+                }
+              }}
             />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!isValidDni(numeroDni) || isVerifying || isPending}
+              onClick={async () => {
+                setIsVerifying(true);
+                try {
+                  const res = await lookupTenantNameByDni(numeroDni);
+                  if (res?.nombreCompleto) {
+                    setNombreCompleto(res.nombreCompleto);
+                    toast.success("Nombre encontrado y completado");
+                  } else {
+                    toast.error("No se encontró nombre para este DNI");
+                  }
+                } catch {
+                  toast.error("Error al verificar DNI");
+                } finally {
+                  setIsVerifying(false);
+                }
+              }}
+            >
+              {isVerifying ? "Verificando..." : "Verificar nombre"}
+            </Button>
           </div>
 
           {/* Correo */}

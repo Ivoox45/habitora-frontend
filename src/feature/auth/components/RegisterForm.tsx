@@ -34,6 +34,14 @@ export default function RegisterForm({ onToggle }: RegisterFormProps) {
   } = useRegister({
     onSuccess: () => {
       toast.success("Cuenta creada correctamente. ¡Bienvenido a Habitora! 🎉");
+      
+      // Inicializar última actividad
+      try {
+        localStorage.setItem("habitora-last-activity", String(Date.now()));
+        // Marcar que es un nuevo registro para evitar redirección automática
+        sessionStorage.setItem("habitora-new-user", "true");
+      } catch {}
+      
       // 👇 Primero pantalla de bienvenida (animación tipo PS4)
       navigate("/welcome");
     },

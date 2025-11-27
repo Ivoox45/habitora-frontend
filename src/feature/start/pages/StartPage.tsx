@@ -128,15 +128,20 @@ export default function StartPage() {
               <div
                 className={`
                   relative w-44 h-44 rounded-full overflow-hidden
-                  border shadow-[0_18px_40px_rgba(15,23,42,0.35)]
-                  transition-shadow duration-150 ease-out
-                  bg-slate-800 text-white
+                  border transition-shadow duration-150 ease-out
+                  bg-gradient-to-br from-slate-50 to-slate-100 text-slate-700 shadow-[0_8px_30px_rgba(0,0,0,0.12)]
                   ${
                     isSelected
-                      ? "border-slate-500 shadow-[0_22px_55px_rgba(15,23,42,0.55)]"
-                      : "border-slate-300/60 group-hover:shadow-[0_22px_55px_rgba(15,23,42,0.5)]"
+                      ? "border-slate-300 shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
+                      : "border-slate-200 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.15)]"
                   }
-                  dark:bg-neutral-900 dark:border-white/15
+                  dark:bg-gradient-to-br dark:from-neutral-900 dark:to-neutral-950 dark:text-white dark:border-white/15
+                  dark:shadow-[0_18px_40px_rgba(0,0,0,0.5)]
+                  ${
+                    isSelected
+                      ? "dark:shadow-[0_22px_55px_rgba(0,0,0,0.7)]"
+                      : "dark:group-hover:shadow-[0_22px_55px_rgba(0,0,0,0.6)]"
+                  }
                 `}
               >
                 <div className="absolute inset-0 flex items-center justify-center">
