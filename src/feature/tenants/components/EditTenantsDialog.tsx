@@ -4,6 +4,17 @@ import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 import { lookupTenantNameByDni } from "../api/tenants";
+import {
+  isValidDni,
+  isValidEmail,
+  isValidPeruvianPhone,
+  isValidFullName,
+  sanitizeDniInput,
+  sanitizePhoneInput,
+  sanitizeNameInput,
+  VALIDATION_MESSAGES,
+  formatPeruvianPhone,
+} from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,23 +34,6 @@ import type { Tenant } from "../types";
 type EditTenantsDialogProps = {
   propiedadId: number;
   tenant: Tenant;
-};
-
-// Helpers de validación (los mismos criterios que en NewTenantsDialog)
-const isValidEmail = (value: string) => {
-  const email = value.trim();
-  if (!email) return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-};
-
-const isValidDni = (value: string) => {
-  return /^\d{8}$/.test(value.trim());
-};
-
-const isValidPhone = (value: string) => {
-  const phone = value.trim();
-  if (!phone) return true; // sigue siendo opcional
-  return /^\d{9}$/.test(phone);
 };
 
 export function EditTenantsDialog({
@@ -87,22 +81,27 @@ export function EditTenantsDialog({
     const telefono = (telefonoWhatsapp || "").trim();
 
     if (!nombre) {
-      toast.error("El nombre completo es obligatorio");
+      toast.error(VALIDATION_MESSAGES.fullName.required);
+      return;
+    }
+
+    if (!isValidFullName(nombre)) {
+      toast.error(VALIDATION_MESSAGES.fullName.invalid);
       return;
     }
 
     if (!isValidDni(dni)) {
-      toast.error("El DNI debe tener exactamente 8 dígitos numéricos");
+      toast.error(VALIDATION_MESSAGES.dni.invalid);
       return;
     }
 
     if (!isValidEmail(correo)) {
-      toast.error("Ingresa un correo electrónico válido");
+      toast.error(VALIDATION_MESSAGES.email.invalid);
       return;
     }
 
-    if (!isValidPhone(telefono)) {
-      toast.error("El teléfono/WhatsApp debe tener exactamente 9 dígitos");
+    if (!isValidPeruvianPhone(telefono)) {
+      toast.error(VALIDATION_MESSAGES.phone.invalid);
       return;
     }
 
@@ -136,11 +135,17 @@ export function EditTenantsDialog({
             <Label>Nombre completo</Label>
             <Input
               value={nombreCompleto}
-              onChange={(e) => setNombreCompleto(e.target.value)}
+              onChange={(e) => {
+                const value = sanitizeNameInput(e.target.value);
+                setNombreCompleto(value);
+              }}
               required
               placeholder="Ej: Juan Pérez"
               disabled={isPending}
             />
+            <p className="text-xs text-muted-foreground">
+              Solo letras, espacios y tildes permitidos
+            </p>
           </div>
 
           {/* DNI */}
@@ -149,7 +154,7 @@ export function EditTenantsDialog({
             <Input
               value={numeroDni}
               onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "").slice(0, 8);
+                const value = sanitizeDniInput(e.target.value);
                 setNumeroDni(value);
               }}
               required
@@ -218,18 +223,29 @@ export function EditTenantsDialog({
 
           {/* Teléfono */}
           <div className="space-y-2">
-            <Label>Teléfono / WhatsApp</Label>
-            <Input
-              value={telefonoWhatsapp ?? ""}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "").slice(0, 9);
-                setTelefonoWhatsapp(value);
-              }}
-              inputMode="numeric"
-              maxLength={9}
-              placeholder="9 dígitos (opcional)"
-              disabled={isPending}
-            />
+            <Label>Teléfono / WhatsApp (Perú)</Label>
+            <div className="flex gap-2">
+              <div className="flex items-center justify-center px-3 border rounded-md bg-muted text-muted-foreground text-sm font-medium">
+                +51
+              </div>
+              <Input
+                value={telefonoWhatsapp ?? ""}
+                onChange={(e) => {
+                  const value = sanitizePhoneInput(e.target.value);
+                  setTelefonoWhatsapp(value);
+                }}
+                inputMode="numeric"
+                maxLength={9}
+                placeholder="987654321"
+                disabled={isPending}
+                className="flex-1"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {(telefonoWhatsapp ?? "").length === 9
+                ? `Número completo: ${formatPeruvianPhone(telefonoWhatsapp ?? "")}`
+                : "9 dígitos sin código de país (opcional)"}
+            </p>
           </div>
 
           <DialogFooter className="pt-4">

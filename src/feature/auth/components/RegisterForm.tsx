@@ -7,6 +7,15 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  isValidFullName,
+  isValidEmail,
+  isValidPeruvianPhone,
+  sanitizeNameInput,
+  sanitizePhoneInput,
+  VALIDATION_MESSAGES,
+  formatPeruvianPhone,
+} from "@/lib/validations";
 
 import newMessageImg from "@/components/assets/new-message_qvv6.svg";
 
@@ -62,6 +71,38 @@ export default function RegisterForm({ onToggle }: RegisterFormProps) {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (isPending) return;
+
+    // Validaciones
+    const nombre = formData.nombreCompleto.trim();
+    const email = formData.email.trim();
+    const telefono = formData.telefonoWhatsapp.trim();
+
+    if (!nombre) {
+      toast.error(VALIDATION_MESSAGES.fullName.required);
+      return;
+    }
+
+    if (!isValidFullName(nombre)) {
+      toast.error(VALIDATION_MESSAGES.fullName.invalid);
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      toast.error(VALIDATION_MESSAGES.email.invalid);
+      return;
+    }
+
+    // Teléfono es opcional, pero si lo ingresa debe ser válido
+    if (telefono && !isValidPeruvianPhone(telefono)) {
+      toast.error(VALIDATION_MESSAGES.phone.invalid);
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      toast.error("La contraseña debe tener al menos 8 caracteres");
+      return;
+    }
+
     register(formData);
   };
 
@@ -91,10 +132,16 @@ export default function RegisterForm({ onToggle }: RegisterFormProps) {
                 type="text"
                 placeholder="Ej. Juan Pérez"
                 value={formData.nombreCompleto}
-                onChange={handleChange}
+                onChange={(e) => {
+                  const value = sanitizeNameInput(e.target.value);
+                  setFormData((prev) => ({ ...prev, nombreCompleto: value }));
+                }}
                 required
                 className="focus-visible:ring-black bg-zinc-100 border-zinc-300 text-zinc-900"
               />
+              <p className="text-xs text-zinc-500">
+                Solo letras, espacios y tildes permitidos
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -114,16 +161,30 @@ export default function RegisterForm({ onToggle }: RegisterFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="telefonoWhatsapp" className="text-zinc-700">
-                Número de WhatsApp
+                Número de WhatsApp (Perú)
               </Label>
-              <Input
-                id="telefonoWhatsapp"
-                type="tel"
-                placeholder="+51 999 999 999"
-                value={formData.telefonoWhatsapp}
-                onChange={handleChange}
-                className="focus-visible:ring-black bg-zinc-100 border-zinc-300 text-zinc-900"
-              />
+              <div className="flex gap-2">
+                <div className="flex items-center justify-center px-3 border rounded-md bg-zinc-200 text-zinc-700 text-sm font-medium">
+                  +51
+                </div>
+                <Input
+                  id="telefonoWhatsapp"
+                  type="tel"
+                  placeholder="987654321"
+                  value={formData.telefonoWhatsapp}
+                  onChange={(e) => {
+                    const value = sanitizePhoneInput(e.target.value);
+                    setFormData((prev) => ({ ...prev, telefonoWhatsapp: value }));
+                  }}
+                  maxLength={9}
+                  className="focus-visible:ring-black bg-zinc-100 border-zinc-300 text-zinc-900 flex-1"
+                />
+              </div>
+              <p className="text-xs text-zinc-500">
+                {formData.telefonoWhatsapp.length === 9
+                  ? `Número completo: ${formatPeruvianPhone(formData.telefonoWhatsapp)}`
+                  : "9 dígitos sin código de país (opcional)"}
+              </p>
             </div>
 
             <div className="space-y-2">
