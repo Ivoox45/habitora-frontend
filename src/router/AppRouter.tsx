@@ -13,6 +13,7 @@ import { TenantsPage } from "@/feature/tenants/pages/TenantsPage";
 import { ContractsPage } from "@/feature/contracts/pages/ContractsPage";
 import { PaymentsPage } from "@/feature/payments/pages/PaymentsPage";
 import { RemindersPage } from "@/feature/reminders/pages/RemindersPage";
+import { DashboardPage } from "@/feature/dashboard/pages";
 
 import StartPage from "@/feature/start/pages/StartPage";
 import OnboardingForm from "@/feature/start/components/OnboardingForm";
@@ -54,7 +55,8 @@ function AppRouterInner() {
 
           {/* PANEL PRINCIPAL */}
           <Route path="/app/:propertyId" element={<Layout />}>
-            <Route index element={<AppHome />} />
+            <Route index element={<DashboardPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
             <Route path="habitaciones" element={<PropertiesPage />} />
             <Route path="inquilinos" element={<TenantsPage />} />
             <Route path="contratos" element={<ContractsPage />} />
