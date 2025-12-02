@@ -58,12 +58,7 @@ export function NavProjects() {
       url: `${basePath}/pagos`,
       icon: CreditCard,
     },
-    {
-      key: "recordatorios",
-      name: "Recordatorios",
-      url: `${basePath}/recordatorios`,
-      icon: Bell,
-    },
+
   ];
 
   const isActive = (url: string) => {

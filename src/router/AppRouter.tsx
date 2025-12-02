@@ -29,11 +29,11 @@ function AppRouterInner() {
   // Guardar la última ruta visitada (solo rutas protegidas permanentes)
   useEffect(() => {
     // Solo guardar rutas del app y start, NO las de onboarding temporal
-    if (location.pathname.startsWith('/app/') || 
-        location.pathname === '/start') {
+    if (location.pathname.startsWith('/app/') ||
+      location.pathname === '/start') {
       try {
         localStorage.setItem('habitora-last-route', location.pathname);
-      } catch {}
+      } catch { }
     }
   }, [location.pathname]);
 
