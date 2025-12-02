@@ -1,5 +1,6 @@
 // src/feature/dashboard/components/StatCard.tsx
 
+import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,7 @@ interface StatCardProps {
   iconColor?: string;
 }
 
-export function StatCard({
+export const StatCard = memo(function StatCard({
   title,
   value,
   icon: Icon,
@@ -30,11 +31,14 @@ export function StatCard({
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className={cn("h-4 w-4", iconColor)} />
       </CardHeader>
+
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
+
         {description && (
           <p className="text-xs text-muted-foreground mt-1">{description}</p>
         )}
+
         {trend && (
           <p
             className={cn(
@@ -49,4 +53,4 @@ export function StatCard({
       </CardContent>
     </Card>
   );
-}
+});

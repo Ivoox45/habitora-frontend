@@ -1,5 +1,6 @@
 // src/feature/dashboard/components/OccupancyChart.tsx
 
+import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bar } from "react-chartjs-2";
 import {
@@ -13,15 +14,15 @@ import {
 } from "chart.js";
 import type { ChartOptions } from "chart.js";
 import { useTheme } from "@/components/theme-provider";
-import type { OcupacionPiso } from "../types";
+import type { OcupacionPiso } from "../types/dashboard.types";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-interface OccupancyChartProps {
+interface Props {
   data: OcupacionPiso[];
 }
 
-export function OccupancyChart({ data }: OccupancyChartProps) {
+export const OccupancyChart = memo(function OccupancyChart({ data }: Props) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -35,16 +36,20 @@ export function OccupancyChart({ data }: OccupancyChartProps) {
       {
         label: "Ocupadas",
         data: ocupadas,
-        backgroundColor: isDark ? "rgba(99, 102, 241, 0.8)" : "rgba(99, 102, 241, 0.9)",
-        borderColor: isDark ? "rgba(99, 102, 241, 1)" : "rgba(99, 102, 241, 1)",
+        backgroundColor: isDark
+          ? "rgba(99, 102, 241, 0.8)"
+          : "rgba(99, 102, 241, 0.9)",
+        borderColor: "rgba(99, 102, 241, 1)",
         borderWidth: 1,
         borderRadius: 6,
       },
       {
         label: "Disponibles",
         data: disponibles,
-        backgroundColor: isDark ? "rgba(148, 163, 184, 0.5)" : "rgba(203, 213, 225, 0.8)",
-        borderColor: isDark ? "rgba(148, 163, 184, 0.8)" : "rgba(148, 163, 184, 1)",
+        backgroundColor: isDark
+          ? "rgba(148, 163, 184, 0.5)"
+          : "rgba(203, 213, 225, 0.8)",
+        borderColor: "rgba(148, 163, 184, 1)",
         borderWidth: 1,
         borderRadius: 6,
       },
@@ -52,25 +57,25 @@ export function OccupancyChart({ data }: OccupancyChartProps) {
   };
 
   const options: ChartOptions<"bar"> = {
-    indexAxis: "y" as const,
+    indexAxis: "y",
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "top" as const,
+        position: "top",
         labels: {
-          color: isDark ? "rgba(255, 255, 255, 0.9)" : "rgba(15, 23, 42, 0.9)",
-          font: { size: 12, weight: "500" },
+          color: isDark ? "#fff" : "#0f172a",
+          font: { size: 12, weight: 500 },
           padding: 16,
           usePointStyle: true,
           pointStyle: "circle",
         },
       },
       tooltip: {
-        backgroundColor: isDark ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 255, 255, 0.95)",
-        titleColor: isDark ? "rgba(255, 255, 255, 0.95)" : "rgba(15, 23, 42, 0.95)",
-        bodyColor: isDark ? "rgba(255, 255, 255, 0.85)" : "rgba(15, 23, 42, 0.85)",
-        borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(15, 23, 42, 0.1)",
+        backgroundColor: isDark ? "#0f172aec" : "#ffffffee",
+        titleColor: isDark ? "#fff" : "#0f172a",
+        bodyColor: isDark ? "#fff" : "#0f172a",
+        borderColor: isDark ? "#ffffff20" : "#00000020",
         borderWidth: 1,
         padding: 12,
         cornerRadius: 8,
@@ -81,44 +86,42 @@ export function OccupancyChart({ data }: OccupancyChartProps) {
       x: {
         stacked: true,
         grid: {
-          color: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
-          lineWidth: 1,
+          color: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
         },
         ticks: {
-          color: isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(15, 23, 42, 0.7)",
+          color: isDark ? "#fff" : "#0f172a",
           font: { size: 11 },
         },
-        border: { color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)" },
       },
       y: {
         stacked: true,
         grid: { display: false },
         ticks: {
-          color: isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(15, 23, 42, 0.7)",
-          font: { size: 11, weight: "500" },
+          color: isDark ? "#fff" : "#0f172a",
+          font: { size: 11, weight: 500 },
         },
-        border: { color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)" },
       },
     },
     animation: {
-      duration: 800,
+      duration: 700,
       easing: "easeInOutQuart",
     },
   };
 
   return (
-    <Card className="col-span-3">
+    <Card className="w-full md:col-span-3">
       <CardHeader>
         <CardTitle>Ocupación por Piso</CardTitle>
         <p className="text-sm text-muted-foreground">
           Distribución de habitaciones ocupadas y disponibles
         </p>
       </CardHeader>
+
       <CardContent>
-        <div style={{ height: "350px", position: "relative" }}>
+        <div className="h-[300px] sm:h-[350px] relative">
           <Bar data={chartData} options={options} />
         </div>
       </CardContent>
     </Card>
   );
-}
+});
