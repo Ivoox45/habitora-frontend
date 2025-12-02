@@ -1,22 +1,24 @@
-// src/feature/tenants/components/NewTenantsDialog.tsx
+// src/feature/tenants/components/NewTenantDialog.tsx
+
 import { useState, type FormEvent } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import { useCreateTenant } from "../hooks/useCreateTenant";
-import { lookupTenantNameByDni } from "../api/tenants";
+import { lookupTenantNameByDni } from "../api/tenants.api";
+import { useCreateTenantMutation } from "../hooks/queries/useCreateTenantMutation";
+
 import {
   isValidDni,
   isValidEmail,
-  isValidPeruvianPhone,
   isValidFullName,
+  isValidPeruvianPhone,
   sanitizeDniInput,
-  sanitizePhoneInput,
   sanitizeNameInput,
-  VALIDATION_MESSAGES,
+  sanitizePhoneInput,
   formatPeruvianPhone,
+  VALIDATION_MESSAGES,
 } from "@/lib/validations";
-import { Button } from "@/components/ui/button";
+
 import {
   Dialog,
   DialogContent,
@@ -27,55 +29,62 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type NewTenantsDialogProps = {
-  propiedadId: number;
-};
-
-export function NewTenantsDialog({ propiedadId }: NewTenantsDialogProps) {
+export function NewTenantDialog({ propiedadId }: { propiedadId: number }) {
   const [open, setOpen] = useState(false);
-  const [numeroDni, setNumeroDni] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefonoWhatsapp, setTelefonoWhatsapp] = useState("");
+
+  const [dni, setDni] = useState("");
   const [nombreCompleto, setNombreCompleto] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefono, setTelefono] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const { mutate: createTenant, isPending } = useCreateTenant(propiedadId, {
-    onSuccess: () => {
-      toast.success("Inquilino creado correctamente");
-      setOpen(false);
-      setNombreCompleto("");
-      setNumeroDni("");
-      setEmail("");
-      setTelefonoWhatsapp("");
-    },
-    onError: () => {
-      toast.error("No se pudo crear el inquilino");
-    },
-  });
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const nombre = nombreCompleto.trim();
-    const dni = numeroDni.trim();
-    const correo = email.trim();
-    const telefono = telefonoWhatsapp.trim();
-
-    // Validar nombre si fue proporcionado
-    if (nombre && !isValidFullName(nombre)) {
-      toast.error(VALIDATION_MESSAGES.fullName.invalid);
-      return;
+  const { mutate: createTenant, isPending } = useCreateTenantMutation(
+    propiedadId,
+    {
+      onSuccess: () => {
+        toast.success("Inquilino registrado");
+        setOpen(false);
+        setDni("");
+        setNombreCompleto("");
+        setEmail("");
+        setTelefono("");
+      },
+      onError: () => toast.error("Error al crear el inquilino"),
     }
+  );
+
+  async function verifyDni() {
+    if (!isValidDni(dni)) return;
+
+    setIsVerifying(true);
+    try {
+      const data = await lookupTenantNameByDni(dni);
+      if (data?.nombreCompleto) {
+        setNombreCompleto(data.nombreCompleto);
+        toast.success("Nombre encontrado");
+      } else {
+        toast.error("No se encontró nombre para este DNI");
+      }
+    } catch {
+      toast.error("Error al consultar DNI");
+    } finally {
+      setIsVerifying(false);
+    }
+  }
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
 
     if (!isValidDni(dni)) {
       toast.error(VALIDATION_MESSAGES.dni.invalid);
       return;
     }
 
-    if (!isValidEmail(correo)) {
+    if (!isValidEmail(email)) {
       toast.error(VALIDATION_MESSAGES.email.invalid);
       return;
     }
@@ -85,158 +94,114 @@ export function NewTenantsDialog({ propiedadId }: NewTenantsDialogProps) {
       return;
     }
 
+    if (nombreCompleto && !isValidFullName(nombreCompleto)) {
+      toast.error(VALIDATION_MESSAGES.fullName.invalid);
+      return;
+    }
+
     createTenant({
       numeroDni: dni,
-      email: correo,
+      email,
       telefonoWhatsapp: telefono,
-      // Enviar nombre si el usuario lo completó; caso contrario, el backend lo resuelve por DNI
-      nombreCompleto: nombreCompleto.trim() || undefined,
+      nombreCompleto: nombreCompleto || undefined,
     });
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nuevo inquilino
+          <Plus className="w-4 h-4" /> Nuevo inquilino
         </Button>
       </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Registrar nuevo inquilino</DialogTitle>
+          <DialogTitle>Registrar inquilino</DialogTitle>
           <DialogDescription>
-            Completa los datos para agregar un inquilino a esta propiedad.
+            Completa los datos del nuevo inquilino.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* DNI */}
           <div className="space-y-2">
-            <Label>Número de DNI</Label>
+            <Label>DNI</Label>
             <Input
-              value={numeroDni}
-              onChange={(e) => {
-                const value = sanitizeDniInput(e.target.value);
-                setNumeroDni(value);
-              }}
-              required
-              inputMode="numeric"
+              value={dni}
               maxLength={8}
+              inputMode="numeric"
               placeholder="8 dígitos"
               disabled={isPending}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter" && isValidDni(numeroDni)) {
-                  e.preventDefault();
-                  setIsVerifying(true);
-                  try {
-                    const res = await lookupTenantNameByDni(numeroDni);
-                    if (res?.nombreCompleto) {
-                      setNombreCompleto(res.nombreCompleto);
-                      toast.success("Nombre encontrado y completado");
-                    } else {
-                      toast.error("No se encontró nombre para este DNI");
-                    }
-                  } catch {
-                    toast.error("Error al verificar DNI");
-                  } finally {
-                    setIsVerifying(false);
-                  }
-                }
-              }}
+              onChange={(e) => setDni(sanitizeDniInput(e.target.value))}
             />
             <Button
               type="button"
-              variant="outline"
               size="sm"
-              disabled={!isValidDni(numeroDni) || isVerifying || isPending}
-              onClick={async () => {
-                setIsVerifying(true);
-                try {
-                  const res = await lookupTenantNameByDni(numeroDni);
-                  if (res?.nombreCompleto) {
-                    setNombreCompleto(res.nombreCompleto);
-                    toast.success("Nombre encontrado y completado");
-                  } else {
-                    toast.error("No se encontró nombre para este DNI");
-                  }
-                } catch {
-                  toast.error("Error al verificar DNI");
-                } finally {
-                  setIsVerifying(false);
-                }
-              }}
+              variant="outline"
+              disabled={!isValidDni(dni) || isVerifying}
+              onClick={verifyDni}
             >
               {isVerifying ? "Verificando..." : "Verificar nombre"}
             </Button>
           </div>
 
-          {/* Nombre (opcional - se completa automáticamente por DNI si se omite) */}
+          {/* Nombre */}
           <div className="space-y-2">
             <Label>Nombre completo (opcional)</Label>
             <Input
               value={nombreCompleto}
-              onChange={(e) => {
-                const value = sanitizeNameInput(e.target.value);
-                setNombreCompleto(value);
-              }}
+              onChange={(e) =>
+                setNombreCompleto(sanitizeNameInput(e.target.value))
+              }
               placeholder="Se completará automáticamente por DNI"
               disabled={isPending}
             />
-            <p className="text-xs text-muted-foreground">
-              Solo letras, espacios y tildes permitidos
-            </p>
           </div>
 
-          {/* Correo */}
+          {/* Email */}
           <div className="space-y-2">
             <Label>Correo electrónico</Label>
             <Input
-              type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
               placeholder="ejemplo@correo.com"
               disabled={isPending}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
           {/* Teléfono */}
           <div className="space-y-2">
-            <Label>Teléfono / WhatsApp (Perú)</Label>
+            <Label>Teléfono / WhatsApp</Label>
             <div className="flex gap-2">
-              <div className="flex items-center justify-center px-3 border rounded-md bg-muted text-muted-foreground text-sm font-medium">
+              <div className="px-3 rounded-md border flex items-center text-sm text-muted-foreground">
                 +51
               </div>
               <Input
-                value={telefonoWhatsapp}
-                onChange={(e) => {
-                  const value = sanitizePhoneInput(e.target.value);
-                  setTelefonoWhatsapp(value);
-                }}
-                inputMode="numeric"
+                value={telefono}
                 maxLength={9}
+                inputMode="numeric"
                 placeholder="987654321"
                 disabled={isPending}
-                className="flex-1"
+                onChange={(e) => setTelefono(sanitizePhoneInput(e.target.value))}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              {telefonoWhatsapp.length === 9
-                ? `Número completo: ${formatPeruvianPhone(telefonoWhatsapp)}`
-                : "9 dígitos sin código de país"}
-            </p>
+            {telefono.length === 9 && (
+              <p className="text-xs text-muted-foreground">
+                Número completo: {formatPeruvianPhone(telefono)}
+              </p>
+            )}
           </div>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="pt-4">
             <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isPending}>
+              <Button type="button" variant="outline">
                 Cancelar
               </Button>
             </DialogClose>
+
             <Button type="submit" disabled={isPending}>
-              {isPending ? "Guardando..." : "Guardar inquilino"}
+              {isPending ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>
         </form>

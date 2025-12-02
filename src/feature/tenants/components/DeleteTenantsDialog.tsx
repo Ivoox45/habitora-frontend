@@ -1,60 +1,38 @@
-// src/feature/tenants/components/DeleteTenantsDialog.tsx
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-  DialogClose,
+  Dialog, DialogContent, DialogDescription,
+  DialogFooter, DialogHeader, DialogTitle,
+  DialogTrigger, DialogClose
 } from "@/components/ui/dialog";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useDeleteTenant } from "../hooks/useDeleteTenant";
+import { useDeleteTenantMutation } from "../hooks/queries/useDeleteTenantMutation";
 
-type DeleteTenantsDialogProps = {
-  propiedadId: number;
-  tenantId: number;
-  tenantName: string;
-};
-
-export function DeleteTenantsDialog({
+export function DeleteTenantDialog({
   propiedadId,
   tenantId,
   tenantName,
-}: DeleteTenantsDialogProps) {
+}: {
+  propiedadId: number;
+  tenantId: number;
+  tenantName: string;
+}) {
   const [open, setOpen] = useState(false);
 
-  const { mutate: deleteTenant, isPending } = useDeleteTenant(
-    propiedadId,
-    tenantId,
-    {
-      onSuccess: () => {
-        toast.success("Inquilino eliminado correctamente");
-        setOpen(false);
-      },
-      onError: () => {
-        toast.error("No se pudo eliminar el inquilino");
-      },
-    }
-  );
-
-  const handleConfirm = () => {
-    deleteTenant();
-  };
+  const { mutate, isPending } = useDeleteTenantMutation(propiedadId, tenantId, {
+    onSuccess: () => {
+      toast.success("Inquilino eliminado");
+      setOpen(false);
+    },
+    onError: () => toast.error("No se pudo eliminar"),
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
+        <Button variant="ghost" size="icon" className="text-destructive">
+          <Trash2 className="w-4 h-4" />
         </Button>
       </DialogTrigger>
 
@@ -62,22 +40,18 @@ export function DeleteTenantsDialog({
         <DialogHeader>
           <DialogTitle>Eliminar inquilino</DialogTitle>
           <DialogDescription>
-            ¿Seguro que deseas eliminar a{" "}
-            <span className="font-semibold">{tenantName}</span>? Esta acción no
-            se puede deshacer.
+            ¿Eliminar a <b>{tenantName}</b>? Esta acción no se puede deshacer.
           </DialogDescription>
         </DialogHeader>
 
-        <DialogFooter className="pt-4">
+        <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar
-            </Button>
+            <Button variant="outline">Cancelar</Button>
           </DialogClose>
+
           <Button
-            type="button"
             variant="destructive"
-            onClick={handleConfirm}
+            onClick={() => mutate()}
             disabled={isPending}
           >
             {isPending ? "Eliminando..." : "Eliminar"}

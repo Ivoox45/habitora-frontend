@@ -1,40 +1,35 @@
 // src/feature/tenants/pages/TenantsPage.tsx
+
 import { useParams } from "react-router-dom";
 import { useMemo } from "react";
-import { useCurrentPropertyStore } from "@/store/useCurrentPropertyStore";
-import { NewTenantsDialog } from "../components/NewTenantsDialog";
+
+import { NewTenantDialog } from "../components/NewTenantsDialog";
 import { TenantsTable } from "../components/TenantsTable";
 
-const parsePropertyId = (raw?: string | null): number | null => {
-  if (!raw) return null;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  return n;
-};
+import { useCurrentPropertyStore } from "@/store/useCurrentPropertyStore";
 
-export const TenantsPage = () => {
+export function TenantsPage() {
   const params = useParams();
 
-  // Soportamos /app/:propertyId/inquilinos y /app/:propiedadId/inquilinos
+  const parseId = (raw?: string) =>
+    raw && Number(raw) > 0 ? Number(raw) : null;
+
   const routeId =
-    (params.propertyId as string | undefined) ??
-    (params.propiedadId as string | undefined);
+    params.propertyId ??
+    params.propiedadId ??
+    null;
 
-  const routePropertyId = useMemo(() => parsePropertyId(routeId), [routeId]);
-
+  const propertyFromUrl = useMemo(() => parseId(routeId ?? undefined), [routeId]);
   const { currentPropertyId } = useCurrentPropertyStore();
 
-  // 1) prioridad: id de la URL
-  // 2) fallback: id guardado en el store
-  const propiedadId = routePropertyId ?? currentPropertyId ?? null;
+  const propiedadId = propertyFromUrl ?? currentPropertyId ?? null;
 
   if (!propiedadId) {
     return (
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-2">Inquilinos</h2>
-        <p className="text-sm text-muted-foreground">
-          No se encontró una propiedad válida en la URL. Vuelve a seleccionar
-          una propiedad desde el inicio.
+        <p className="text-muted-foreground text-sm">
+          Selecciona una propiedad desde el panel principal.
         </p>
       </div>
     );
@@ -42,8 +37,7 @@ export const TenantsPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header + botón */}
-      <div className="flex items-center justify-between gap-3">
+      <header className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Inquilinos</h2>
           <p className="text-sm text-muted-foreground">
@@ -51,12 +45,10 @@ export const TenantsPage = () => {
           </p>
         </div>
 
-        {/* Botón que abre el dialog para crear inquilino */}
-        <NewTenantsDialog propiedadId={propiedadId} />
-      </div>
+        <NewTenantDialog propiedadId={propiedadId} />
+      </header>
 
-      {/* Tabla (cuando la tengas lista) */}
-       <TenantsTable propiedadId={propiedadId} />
+      <TenantsTable propiedadId={propiedadId} />
     </div>
   );
-};
+}
