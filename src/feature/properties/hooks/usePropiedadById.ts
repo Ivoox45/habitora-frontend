@@ -1,6 +1,6 @@
 // src/feature/properties/hooks/usePropiedadById.ts
 import { useQuery } from "@tanstack/react-query";
-import { getPropiedadById } from "../api/properties";
+import { getPropertyById } from "../api/properties.api";
 import type { Propiedad } from "../types";
 
 /**
@@ -11,6 +11,6 @@ export const usePropiedadById = (id: number | null) => {
     queryKey: ["propiedad", id],
     enabled: id !== null && id > 0,
     retry: false, // un 404 no reintenta en bucle
-    queryFn: () => getPropiedadById(id as number),
+    queryFn: () => getPropertyById(id as number),
   });
 };

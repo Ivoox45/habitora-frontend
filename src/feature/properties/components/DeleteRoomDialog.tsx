@@ -1,5 +1,4 @@
 // src/feature/properties/components/DeleteRoomDialog.tsx
-
 import { toast } from "sonner";
 
 import {
@@ -12,8 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-import type { Room } from "../types";
-import { useDeleteRoom } from "../hooks/useDeleteRoom";
+import type { Room } from "../types/rooms.types";
+import { useDeleteRoomMutation } from "../hooks/queries/useDeleteRoomMutation";
 
 type DeleteRoomDialogProps = {
   propertyId: number;
@@ -28,54 +27,33 @@ export function DeleteRoomDialog({
   open,
   onOpenChange,
 }: DeleteRoomDialogProps) {
-  const { mutate: eliminarHabitacion, isPending } = useDeleteRoom(propertyId, {
+  const { mutate: deleteRoom, isPending } = useDeleteRoomMutation(propertyId, {
     onSuccess: () => {
       toast.success("Habitación eliminada correctamente");
       onOpenChange(false);
     },
-    onError: () => {
-      toast.error("No se pudo eliminar la habitación");
-    },
+    onError: () => toast.error("No se pudo eliminar la habitación"),
   });
 
-  const handleConfirm = () => {
-    if (!room) return;
-    eliminarHabitacion({ roomId: room.id });
-  };
-
-  // Si no hay habitación seleccionada, no mostramos nada
   if (!room) return null;
+
+  const handleConfirm = () => deleteRoom({ roomId: room.id });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            Eliminar habitación {room.code}
-          </DialogTitle>
+          <DialogTitle>Eliminar habitación {room.code}</DialogTitle>
           <DialogDescription>
-            ¿Seguro que quieres eliminar esta habitación? Esta acción no se puede
-            deshacer y la habitación dejará de estar disponible.
+            Esta acción no se puede deshacer.
           </DialogDescription>
         </DialogHeader>
 
-       
-
         <DialogFooter className="mt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isPending}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
             Cancelar
           </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={handleConfirm}
-            disabled={isPending}
-          >
+          <Button variant="destructive" onClick={handleConfirm} disabled={isPending}>
             {isPending ? "Eliminando..." : "Eliminar habitación"}
           </Button>
         </DialogFooter>

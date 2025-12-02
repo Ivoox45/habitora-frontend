@@ -3,178 +3,154 @@
 import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AlertCircle, Home } from "lucide-react";
-import { EmptyState } from "@/components/EmptyState";
+
+import { useCurrentPropertyStore } from "@/store/useCurrentPropertyStore";
+
+import { useRoomsByPropertyQuery } from "../hooks/queries/useRoomsByPropertyQuery";
+import type { Room } from "../types/rooms.types";
 
 import { GridRooms } from "../components/GridRooms";
 import { NewRoomDialog } from "../components/NewRoomDialog";
 import { EditRoomDialog } from "../components/EditRoomDialog";
 import { DeleteRoomDialog } from "../components/DeleteRoomDialog";
 
-import { useCurrentPropertyStore } from "@/store/useCurrentPropertyStore";
-import { useRoomsByProperty } from "../hooks/useRoomsByProperty";
-import type { Room } from "../types";
+import { EmptyState } from "@/components/EmptyState";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
-// helper...
-const parsePropertyId = (raw?: string | null): number | null => {
-  if (!raw) return null;
+const parseId = (raw?: string | null) => {
   const n = Number(raw);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  return n;
+  return Number.isFinite(n) && n > 0 ? n : null;
 };
 
 export function PropertiesPage() {
   const params = useParams();
+  const idRaw =
+    params.propertyId ??
+    params.propiedadId ??
+    null;
 
-  const routeId =
-    (params.propertyId as string | undefined) ??
-    (params.propiedadId as string | undefined);
-
-  const routePropertyId = useMemo(() => parsePropertyId(routeId), [routeId]);
+  const idFromRoute = useMemo(() => parseId(idRaw), [idRaw]);
   const { currentPropertyId } = useCurrentPropertyStore();
 
-  const propiedadId = routePropertyId ?? currentPropertyId ?? null;
+  const propertyId = idFromRoute ?? currentPropertyId ?? null;
 
-  // ====== si no hay propiedad ======
-  if (!propiedadId) {
+  if (!propertyId)
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-2">Habitaciones</h1>
-        <p className="text-sm text-muted-foreground flex items-center gap-2">
-          <AlertCircle className="w-4 h-4" />
-          No valid property was found. Please select a property from the start
-          page.
+        <h1 className="text-2xl font-bold">Habitaciones</h1>
+        <p className="text-sm flex items-center gap-2 text-muted-foreground">
+          <AlertCircle className="w-4 h-4" /> Selecciona una propiedad válida.
         </p>
       </div>
     );
-  }
 
-  // ====== estado para editar / eliminar ======
   const [roomToEdit, setRoomToEdit] = useState<Room | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const handleEditRoom = (room: Room) => {
+  const handleEdit = (room: Room) => {
     setRoomToEdit(room);
     setEditOpen(true);
   };
 
-  const handleDeleteRoom = (room: Room) => {
+  const handleDelete = (room: Room) => {
     setRoomToDelete(room);
     setDeleteOpen(true);
   };
 
-  // ====== queries: con precio / sin precio ======
-  const {
-    data: floorsWithPrice,
-    isLoading: isLoadingWith,
-    isError: isErrorWith,
-  } = useRoomsByProperty(propiedadId, { requierePrecio: true });
+  const withPrice = useRoomsByPropertyQuery(propertyId, {
+    requierePrecio: true,
+  });
 
-  const {
-    data: floorsWithoutPrice,
-    isLoading: isLoadingWithout,
-    isError: isErrorWithout,
-  } = useRoomsByProperty(propiedadId, { requierePrecio: false });
+  const withoutPrice = useRoomsByPropertyQuery(propertyId, {
+    requierePrecio: false,
+  });
 
-  // estados combinados
-  if (isLoadingWith || isLoadingWithout) {
+  if (withPrice.isLoading || withoutPrice.isLoading)
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-2">Habitaciones</h1>
-        <p className="text-sm text-muted-foreground">Loading rooms…</p>
+        <h1 className="text-2xl font-bold">Habitaciones</h1>
+        <p className="text-sm text-muted-foreground">Cargando habitaciones…</p>
       </div>
     );
-  }
 
-  if (isErrorWith || isErrorWithout) {
+  if (withPrice.isError || withoutPrice.isError)
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-2">Habitaciones</h1>
-        <p className="text-sm text-red-500">
-          There was an error loading the rooms for this property.
-        </p>
+        <h1 className="text-2xl font-bold">Habitaciones</h1>
+        <p className="text-sm text-red-500">Error cargando habitaciones.</p>
       </div>
     );
-  }
-
-  const withPrice = floorsWithPrice ?? [];
-  const withoutPrice = floorsWithoutPrice ?? [];
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Habitaciones</h1>
+          <h1 className="text-2xl font-bold">Habitaciones</h1>
           <p className="text-sm text-muted-foreground">
             Gestiona las habitaciones de la propiedad seleccionada.
           </p>
         </div>
 
-        <NewRoomDialog propertyId={propiedadId} />
+        <NewRoomDialog propertyId={propertyId} />
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="with-price" className="space-y-4">
-        {/* centrado */}
-        <TabsList className="w-full flex justify-center gap-2">
+      <Tabs defaultValue="with-price">
+        <TabsList className="flex justify-center w-full">
           <TabsTrigger value="with-price">Con precio</TabsTrigger>
           <TabsTrigger value="without-price">Sin precio</TabsTrigger>
         </TabsList>
 
         {/* Con precio */}
-        <TabsContent value="with-price" className="space-y-4">
-          {withPrice.length === 0 ? (
+        <TabsContent value="with-price">
+          {withPrice.data?.length === 0 ? (
             <EmptyState
               icon={Home}
               title="No hay habitaciones con precio"
-              description="Aún no has configurado precios para tus habitaciones. Asigna precios para poder crear contratos de alquiler."
-              compact
+              description="Agrega precios para habilitar contratos."
             />
           ) : (
-            <GridRooms
-              floors={withPrice as any}
-              onEditRoom={handleEditRoom}
-              onDeleteRoom={handleDeleteRoom}
-            />
+            <GridRooms floors={withPrice.data} onEditRoom={handleEdit} onDeleteRoom={handleDelete} />
           )}
         </TabsContent>
 
         {/* Sin precio */}
-        <TabsContent value="without-price" className="space-y-4">
-          {withoutPrice.length === 0 ? (
-            <div className="text-center py-12 px-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 mb-4">
-                <span className="text-3xl">✅</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">¡Excelente!</h3>
-              <p className="text-sm text-muted-foreground">Todas las habitaciones tienen precio asignado.</p>
-            </div>
+        <TabsContent value="without-price">
+          {withoutPrice.data?.length === 0 ? (
+            <EmptyState
+              icon={Home}
+              title="Todo configurado"
+              description="Todas las habitaciones tienen precio asignado."
+            />
           ) : (
             <GridRooms
-              floors={withoutPrice as any}
-              onEditRoom={handleEditRoom}
-              onDeleteRoom={handleDeleteRoom}
+              floors={withoutPrice.data}
+              onEditRoom={handleEdit}
+              onDeleteRoom={handleDelete}
             />
           )}
         </TabsContent>
       </Tabs>
 
-      {/* Dialog editar */}
+      {/* Edit */}
       <EditRoomDialog
-        propertyId={propiedadId}
+        propertyId={propertyId}
         room={roomToEdit}
         open={editOpen}
         onOpenChange={setEditOpen}
       />
 
-      {/* Dialog eliminar */}
+      {/* Delete */}
       <DeleteRoomDialog
-        propertyId={propiedadId}
+        propertyId={propertyId}
         room={roomToDelete}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

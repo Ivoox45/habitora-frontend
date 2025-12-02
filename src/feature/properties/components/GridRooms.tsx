@@ -1,10 +1,13 @@
 // src/feature/properties/components/GridRooms.tsx
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { RoomCard } from "./RoomCard";
-import type { Room, RoomsByFloor } from "../types";
+import { RoomCardSkeleton } from "./RoomCardSkeleton";
+
+import type { Room, RoomsByFloor } from "../types/rooms.types";
 import { EmptyState } from "@/components/EmptyState";
 import { Home } from "lucide-react";
+
 import {
   Pagination,
   PaginationContent,
@@ -14,111 +17,80 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-const getFloorLabel = (numeroPiso: number) => {
-  switch (numeroPiso) {
-    case 1:
-      return "Primer piso";
-    case 2:
-      return "Segundo piso";
-    case 3:
-      return "Tercer piso";
-    case 4:
-      return "Cuarto piso";
-    case 5:
-      return "Quinto piso";
-    case 6:
-      return "Sexto piso";
-    case 7:
-      return "Séptimo piso";
-    case 8:
-      return "Octavo piso";
-    default:
-      return `Piso ${numeroPiso}`;
-  }
-};
-
-type GridRoomsProps = {
+type Props = {
   floors?: RoomsByFloor[];
   onEditRoom?: (room: Room) => void;
   onDeleteRoom?: (room: Room) => void;
+  isLoading?: boolean;
 };
 
 const PAGE_SIZE = 9;
 
-export function GridRooms({ floors, onEditRoom, onDeleteRoom }: GridRoomsProps) {
-  const safeFloors = floors ?? [];
+export function GridRooms({ floors, onEditRoom, onDeleteRoom, isLoading }: Props) {
 
-  // Agrupar habitaciones por piso y ordenar
-  const sortedFloors = useMemo(() => {
-    return [...safeFloors]
-      .filter((f) => (f.rooms ?? []).length > 0)
-      .sort((a, b) => a.floorNumber - b.floorNumber)
-      .map((floor) => ({
-        ...floor,
-        rooms: [...(floor.rooms ?? [])].sort((a, b) => {
-          const codeA = Number(a.code);
-          const codeB = Number(b.code);
-          const validA = Number.isFinite(codeA);
-          const validB = Number.isFinite(codeB);
-          if (validA && validB) return codeA - codeB;
-          if (validA) return -1;
-          if (validB) return 1;
-          return a.code.localeCompare(b.code);
-        }),
-      }));
-  }, [safeFloors]);
-
-  // Aplanar para paginación global
-  const allRooms = useMemo(() => {
-    return sortedFloors.flatMap((floor) =>
-      (floor.rooms ?? []).map((room) => ({
-        room,
-        floorNumber: floor.floorNumber,
-      }))
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <RoomCardSkeleton key={i} />
+        ))}
+      </div>
     );
-  }, [sortedFloors]);
+  }
+  const safe = floors ?? [];
 
-  if (sortedFloors.length === 0 || allRooms.length === 0) {
+  const sorted = useMemo(
+    () =>
+      safe
+        .map((f) => ({
+          ...f,
+          rooms: [...f.rooms].sort((a, b) => Number(a.code) - Number(b.code)),
+        }))
+        .sort((a, b) => a.floorNumber - b.floorNumber),
+    [safe]
+  );
+
+  const all = useMemo(
+    () =>
+      sorted.flatMap((f) =>
+        f.rooms.map((room) => ({ room, floorNumber: f.floorNumber }))
+      ),
+    [sorted]
+  );
+
+  if (all.length === 0)
     return (
       <EmptyState
         icon={Home}
-        title="No hay habitaciones registradas"
-        description="Comienza agregando habitaciones a tu propiedad para gestionar alquileres."
-        compact
+        title="Sin habitaciones"
+        description="Agrega habitaciones para poder gestionarlas"
       />
     );
-  }
 
   const [page, setPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(allRooms.length / PAGE_SIZE));
+  const totalPages = Math.ceil(all.length / PAGE_SIZE);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
-  const startIndex = (page - 1) * PAGE_SIZE;
-  const paginatedRooms = allRooms.slice(startIndex, startIndex + PAGE_SIZE);
+  const items = all.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Agrupar las habitaciones paginadas por piso
-  const paginatedRoomsByFloor = useMemo(() => {
-    const map = new Map<number, { floorNumber: number; rooms: Room[] }>();
-    paginatedRooms.forEach(({ room, floorNumber }) => {
-      if (!map.has(floorNumber)) {
-        map.set(floorNumber, { floorNumber, rooms: [] });
-      }
-      map.get(floorNumber)!.rooms.push(room);
+  const grouped = useMemo(() => {
+    const map = new Map<number, Room[]>();
+    items.forEach(({ room, floorNumber }) => {
+      if (!map.has(floorNumber)) map.set(floorNumber, []);
+      map.get(floorNumber)!.push(room);
     });
-    // Ordenar por número de piso
-    return Array.from(map.values()).sort((a, b) => a.floorNumber - b.floorNumber);
-  }, [paginatedRooms]);
+    return [...map.entries()].sort((a, b) => a[0] - b[0]);
+  }, [items]);
 
   return (
     <div className="space-y-8">
-      {paginatedRoomsByFloor.map(({ floorNumber, rooms }) => (
-        <div key={floorNumber} className="space-y-3">
-          <h2 className="text-lg font-bold text-slate-700 dark:text-white/90 pl-1">
-            {getFloorLabel(floorNumber)}
-          </h2>
+      {grouped.map(([floorNumber, rooms]) => (
+        <div key={floorNumber}>
+          <h2 className="text-lg font-bold mb-3">Piso {floorNumber}</h2>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {rooms.map((room) => (
               <RoomCard
@@ -128,64 +100,33 @@ export function GridRooms({ floors, onEditRoom, onDeleteRoom }: GridRoomsProps) 
                 estado={room.status}
                 precioRenta={room.rentPrice}
                 numeroPiso={floorNumber}
-                onEdit={onEditRoom ? () => onEditRoom(room) : undefined}
-                onDelete={onDeleteRoom ? () => onDeleteRoom(room) : undefined}
+                onEdit={() => onEditRoom?.(room)}
+                onDelete={() => onDeleteRoom?.(room)}
               />
             ))}
           </div>
         </div>
       ))}
 
-      <p className="text-xs text-muted-foreground">
-        Mostrando{" "}
-        <span className="font-medium">
-          {allRooms.length === 0 ? 0 : startIndex + 1}
-        </span>{" "}
-        –{" "}
-        <span className="font-medium">
-          {Math.min(startIndex + PAGE_SIZE, allRooms.length)}
-        </span>{" "}
-        de <span className="font-medium">{allRooms.length}</span>{" "}
-        habitaciones
-      </p>
-
       <Pagination>
         <PaginationContent>
           <PaginationItem>
-            <PaginationPrevious
-              href="#"
-              aria-disabled={page === 1}
-              onClick={(e) => {
-                e.preventDefault();
-                if (page > 1) setPage(page - 1);
-              }}
-            />
+            <PaginationPrevious onClick={() => page > 1 && setPage(page - 1)} />
           </PaginationItem>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <PaginationItem key={p}>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <PaginationItem key={i}>
               <PaginationLink
-                href="#"
-                isActive={p === page}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setPage(p);
-                }}
+                isActive={i + 1 === page}
+                onClick={() => setPage(i + 1)}
               >
-                {p}
+                {i + 1}
               </PaginationLink>
             </PaginationItem>
           ))}
 
           <PaginationItem>
-            <PaginationNext
-              href="#"
-              aria-disabled={page === totalPages}
-              onClick={(e) => {
-                e.preventDefault();
-                if (page < totalPages) setPage(page + 1);
-              }}
-            />
+            <PaginationNext onClick={() => page < totalPages && setPage(page + 1)} />
           </PaginationItem>
         </PaginationContent>
       </Pagination>
