@@ -43,7 +43,7 @@ export default function OnboardingForm({ onComplete, onBack }: OnboardingFormPro
       // Limpiar la bandera de nuevo usuario al completar onboarding
       try {
         sessionStorage.removeItem('habitora-new-user');
-      } catch {}
+      } catch { }
       if (onComplete) {
         onComplete();
       } else {
@@ -154,7 +154,7 @@ export default function OnboardingForm({ onComplete, onBack }: OnboardingFormPro
     // Limpiar la bandera de nuevo usuario si cancela
     try {
       sessionStorage.removeItem('habitora-new-user');
-    } catch {}
+    } catch { }
     if (onBack) {
       onBack();
     } else {
@@ -189,7 +189,7 @@ export default function OnboardingForm({ onComplete, onBack }: OnboardingFormPro
     const inputColors = isDark
       ? "bg-black/40 border-white/20 text-white placeholder:text-white/40"
       : "bg-white/90 border-slate-300 text-slate-900 placeholder:text-slate-400 " +
-        "shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur-md";
+      "shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur-md";
 
     const separatorColor = isDark ? "bg-white/10" : "bg-slate-200/80";
 
@@ -217,7 +217,7 @@ export default function OnboardingForm({ onComplete, onBack }: OnboardingFormPro
     };
   }, [isDark]);
 
-        
+
   // ========= Render =========
 
   return (
@@ -299,14 +299,14 @@ export default function OnboardingForm({ onComplete, onBack }: OnboardingFormPro
                   >
                     −
                   </button>
-                <Input
-                  type="number"
-                  min={MIN_PISOS}
-                  max={MAX_PISOS}
-                  value={pisos}
-                  onChange={(e) => handlePisosChange(Number(e.target.value))}
-                  className={`${inputClass} w-24 text-center ${shakePisos ? 'border-red-400 ring-2 ring-red-300' : ''}`}
-                />
+                  <Input
+                    type="number"
+                    min={MIN_PISOS}
+                    max={MAX_PISOS}
+                    value={pisos}
+                    onChange={(e) => handlePisosChange(Number(e.target.value))}
+                    className={`${inputClass} w-24 text-center no-spinner ${shakePisos ? 'border-red-400 ring-2 ring-red-300' : ''}`}
+                  />
                   <button
                     type="button"
                     aria-label="Agregar piso"
@@ -350,9 +350,8 @@ export default function OnboardingForm({ onComplete, onBack }: OnboardingFormPro
               {Array.from({ length: pisos }, (_, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <Label
-                    className={`w-24 text-sm font-medium ${
-                      isDark ? "text-white/80" : "text-slate-700"
-                    }`}
+                    className={`w-24 text-sm font-medium ${isDark ? "text-white/80" : "text-slate-700"
+                      }`}
                   >
                     Piso {i + 1}
                   </Label>
@@ -373,13 +372,13 @@ export default function OnboardingForm({ onComplete, onBack }: OnboardingFormPro
                       onChange={(e) =>
                         handleHabitacionChange(i, Number(e.target.value))
                       }
-                      className={`${inputClass} w-20 text-center ${shakeRooms[i] ? 'border-red-400 ring-2 ring-red-300' : ''}`}
+                      className={`${inputClass} w-20 text-center  no-spinner ${shakeRooms[i] ? 'border-red-400 ring-2 ring-red-300' : ''}`}
                     />
                     <button
                       type="button"
                       aria-label="Agregar habitación"
                       onClick={() => handleHabitacionChange(i, (habitacionesPorPiso[i] ?? MIN_ROOMS) + 1)}
-                      className={`rounded-md px-2 py-1 text-sm font-semibold ${isDark ? "bg:white/10 text-white hover:bg-white/20" : "bg-slate-200 text-slate-800 hover:bg-slate-300"}`}
+                      className={`rounded-md px-2 py-1 text-sm font-semibold ${isDark ? "bg-white/10 text-white hover:bg-white/20" : "bg-slate-200 text-slate-800 hover:bg-slate-300"}`}
                     >
                       +
                     </button>
