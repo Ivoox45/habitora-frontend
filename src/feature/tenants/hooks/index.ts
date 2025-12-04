@@ -1,7 +1,7 @@
 // src/feature/tenants/hooks/index.ts
-export * from "./useTenants";
-export * from "./useTenantById";
-export * from "./useSearchTenants";
-export * from "./useCreateTenant";
-export * from "./useUpdateTenant";
-export * from "./useDeleteTenant";
+export * from "./queries/useTenantsQuery";
+export * from "./queries/useTenantByIdQuery";
+export * from "./queries/useSearchTenantsQuery";
+export * from "./queries/useCreateTenantMutation";
+export * from "./queries/useUpdateTenantMutation";
+export * from "./queries/useDeleteTenantMutation";

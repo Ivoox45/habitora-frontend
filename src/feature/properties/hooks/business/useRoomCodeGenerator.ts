@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Room, RoomsByFloor } from "../../types";
+import type { Room, RoomsByFloor } from "../../types/rooms.types";
 import { getAvailableCodesForRoom, getAvailableCodesForFloor } from "../../utils/room.helpers";
 
 export function useRoomCodeGenerator(floors: RoomsByFloor[] | undefined, room?: Room | null, floorId?: number | null) {

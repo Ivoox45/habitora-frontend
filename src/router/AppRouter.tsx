@@ -78,37 +78,3 @@ export default function AppRouter() {
     </BrowserRouter>
   );
 }
-
-function AppHome() {
-  return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-semibold">Bienvenido a Habitora</h2>
-      <p className="text-sm text-muted-foreground">
-        Esto es solo contenido de prueba dentro del layout con sidebar.
-      </p>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border p-4 shadow-sm">
-          <h3 className="font-semibold mb-1">Módulo Propiedades</h3>
-          <p className="text-xs text-muted-foreground">
-            Aquí iría la gestión de habitaciones, mini-depas, etc.
-          </p>
-        </div>
-
-        <div className="rounded-xl border p-4 shadow-sm">
-          <h3 className="font-semibold mb-1">Módulo Inquilinos</h3>
-          <p className="text-xs text-muted-foreground">
-            Información de inquilinos, contratos y pagos.
-          </p>
-        </div>
-
-        <div className="rounded-xl border p-4 shadow-sm">
-          <h3 className="font-semibold mb-1">Reportes</h3>
-          <p className="text-xs text-muted-foreground">
-            Resumen de ingresos, ocupación y métricas clave.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}

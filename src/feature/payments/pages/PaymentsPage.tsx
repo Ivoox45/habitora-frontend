@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Factura, EstadoFactura } from "../types";
+import type { Factura } from "../types";
 import { AlertCircle, CheckCircle2, Clock, Users } from "lucide-react";
 
 export const PaymentsPage = () => {

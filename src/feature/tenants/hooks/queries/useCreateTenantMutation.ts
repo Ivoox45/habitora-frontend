@@ -11,7 +11,7 @@ export function useCreateTenantMutation(
     return useMutation<Tenant, unknown, CreateTenantPayload>({
         mutationFn: payload => createTenant(propiedadId, payload),
 
-        onSuccess: res => {
+        onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["tenants", propiedadId] });
             options?.onSuccess?.();
         },

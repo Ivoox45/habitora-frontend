@@ -1,7 +1,7 @@
 // src/feature/properties/hooks/usePropiedadById.ts
 import { useQuery } from "@tanstack/react-query";
 import { getPropertyById } from "../api/properties.api";
-import type { Propiedad } from "../types";
+import type { Propiedad } from "../types/properties.types";
 
 /**
  * Obtiene una propiedad por id.

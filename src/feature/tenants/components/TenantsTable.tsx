@@ -15,10 +15,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/EmptyState";
 
 import {
-  IdCard,
-  Mail,
-  Phone,
-  FileText,
   UserRound,
 } from "lucide-react";
 import { EditTenantDialog } from "./EditTenantsDialog";

@@ -1,4 +1,4 @@
-import type { RoomsByFloor, Room } from "../types";
+import type { RoomsByFloor, Room } from "../types/rooms.types";
 
 /** Máximo de habitaciones por piso (.01 a .08) */
 export const MAX_ROOMS_PER_FLOOR = 8;
