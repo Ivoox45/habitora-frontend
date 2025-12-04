@@ -42,9 +42,9 @@ export function mapDashboardStats(dto: DashboardStatsDTO): DashboardStats {
             cantidadPagos: Number(m.cantidadPagos ?? 0),
         })),
 
-        ocupacionPorPiso: dto.ocupacionPorPiso.map((o) => ({
+        ocupacionPorPiso: dto.ocupacionPorPiso.map((o, index) => ({
             ...o,
-            pisoCodigo: o.pisoCodigo ?? "N/A",
+            pisoCodigo: o.pisoCodigo || `Piso ${index + 1}`,
             porcentajeOcupacion: Number(o.porcentajeOcupacion ?? 0),
             ocupadas: Number(o.ocupadas ?? 0),
             disponibles: Number(o.disponibles ?? 0),

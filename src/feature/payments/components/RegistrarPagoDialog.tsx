@@ -11,6 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -18,10 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PenTool, Trash2 } from "lucide-react";
+import { PenTool, Trash2, CalendarIcon } from "lucide-react";
 import type { Factura, MetodoPago } from "../types";
 import { useRegistrarPago } from "../hooks/useRegistrarPago";
 import SignatureCanvas from "react-signature-canvas";
+import { useTheme } from "@/components/theme-provider";
 
 interface RegistrarPagoDialogProps {
   open: boolean;
@@ -36,11 +40,12 @@ export function RegistrarPagoDialog({
   factura,
   propiedadId,
 }: RegistrarPagoDialogProps) {
-  const [fechaPago, setFechaPago] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [fechaPago, setFechaPago] = useState<Date>(new Date());
   const [metodo, setMetodo] = useState<MetodoPago>("EFECTIVO");
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const signatureRef = useRef<SignatureCanvas>(null);
+  const { theme } = useTheme();
+  const penColor = theme === "dark" ? "#ffffff" : "#000000";
 
   const { mutate: registrarPago, isPending } = useRegistrarPago();
 
@@ -65,7 +70,7 @@ export function RegistrarPagoDialog({
         propiedadId,
         facturaId: factura.id,
         request: {
-          fechaPago,
+          fechaPago: fechaPago.toISOString().split("T")[0],
           monto: factura.montoRenta,
           metodo,
           firmaBase64,
@@ -75,7 +80,7 @@ export function RegistrarPagoDialog({
         onSuccess: () => {
           onClose();
           // Reset form
-          setFechaPago(new Date().toISOString().split("T")[0]);
+          setFechaPago(new Date());
           setMetodo("EFECTIVO");
           signatureRef.current?.clear();
         },
@@ -124,13 +129,46 @@ export function RegistrarPagoDialog({
           {/* Fecha de pago */}
           <div className="space-y-2">
             <Label htmlFor="fechaPago">Fecha de pago *</Label>
-            <Input
-              id="fechaPago"
-              type="date"
-              value={fechaPago}
-              onChange={(e) => setFechaPago(e.target.value)}
-              max={new Date().toISOString().split("T")[0]}
-            />
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !fechaPago && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {fechaPago ? (
+                    fechaPago.toLocaleDateString("es-PE", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  ) : (
+                    <span>Selecciona una fecha</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={fechaPago}
+                  onSelect={(date) => {
+                    if (date) {
+                      setFechaPago(date);
+                      setCalendarOpen(false);
+                    }
+                  }}
+                  disabled={(date) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return date < today;
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Método de pago */}
@@ -174,7 +212,7 @@ export function RegistrarPagoDialog({
                   className: "w-full h-32 rounded bg-background cursor-crosshair",
                 }}
                 backgroundColor="transparent"
-                penColor="currentColor"
+                penColor={penColor}
               />
             </div>
             <p className="text-xs text-muted-foreground">

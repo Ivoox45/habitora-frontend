@@ -18,12 +18,11 @@ import { AlertCircle, CheckCircle2, Clock, Users } from "lucide-react";
 
 export const PaymentsPage = () => {
   const currentPropertyId = useCurrentPropertyStore((s) => s.currentPropertyId);
-  const [filtroEstado, setFiltroEstado] = useState<EstadoFactura | undefined>(undefined);
   const [filtroInquilino, setFiltroInquilino] = useState<string>("todos");
   const [facturaSeleccionada, setFacturaSeleccionada] = useState<Factura | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { data: facturas, isLoading, isError } = useFacturas(currentPropertyId, undefined, filtroEstado);
+  const { data: facturas, isLoading, isError } = useFacturas(currentPropertyId, undefined, undefined);
 
   const handleRegistrarPago = (factura: Factura) => {
     setFacturaSeleccionada(factura);
@@ -151,12 +150,7 @@ export const PaymentsPage = () => {
       </div>
 
       {/* Tabla con filtros */}
-      <Tabs defaultValue="todas" onValueChange={(v) => {
-        if (v === "todas") setFiltroEstado(undefined);
-        else if (v === "pendientes") setFiltroEstado("ABIERTA");
-        else if (v === "vencidas") setFiltroEstado("VENCIDA");
-        else if (v === "pagadas") setFiltroEstado("PAGADA");
-      }}>
+      <Tabs defaultValue="todas">
         <TabsList>
           <TabsTrigger value="todas">Todas</TabsTrigger>
           <TabsTrigger value="pendientes">

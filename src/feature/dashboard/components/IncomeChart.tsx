@@ -1,50 +1,68 @@
 // src/feature/dashboard/components/IncomeChart.tsx
 
-import { memo, useMemo } from "react";
+import { memo} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bar } from "react-chartjs-2";
-import { useTheme } from "@/components/theme-provider";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+import { ResponsiveContainer, BarChart, XAxis, YAxis, Bar } from "recharts";
 import type { IngresoMensual } from "../types/dashboard.types";
+
 
 interface Props {
   data: IngresoMensual[];
 }
 
 export const IncomeChart = memo(function IncomeChart({ data }: Props) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  // Estadísticas clave
+  const total = data.reduce((acc, i) => acc + i.monto, 0);
+  const max = Math.max(...data.map(i => i.monto), 0);
+  const min = Math.min(...data.map(i => i.monto), 0);
 
-  const chartData = useMemo(() => {
-    const labels = data.map((i) => i.mesNombre.split(" ")[0]);
-    const montos = data.map((i) => i.monto);
+  // Adaptar datos para el chart de shadcn (Recharts)
+  const chartData = data.map((i) => ({
+    name: i.mesNombre.split(" ")[0],
+    monto: i.monto,
+  }));
 
-    return {
-      labels,
-      datasets: [
-        {
-          label: "Ingresos",
-          data: montos,
-          backgroundColor: isDark
-            ? "rgba(16,185,129,0.8)"
-            : "rgba(16,185,129,0.9)",
-          borderColor: "rgba(16,185,129,1)",
-          borderWidth: 1,
-          borderRadius: 8,
-        },
-      ],
-    };
-  }, [data, isDark]);
+  // Configuración de colores y leyenda
+  const chartConfig = {
+    monto: {
+      label: "Ingresos",
+      color: "#3b82f6", // azul moderno
+    },
+  };
+
 
   return (
     <Card className="w-full md:col-span-4">
       <CardHeader>
         <CardTitle>Ingresos Mensuales</CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <div className="h-[350px] relative">
-          <Bar data={chartData} />
+        <div className="flex gap-8 mt-2">
+          <div>
+            <div className="text-xs text-muted-foreground">Total</div>
+            <div className="text-2xl font-bold">S/ {total.toLocaleString()}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Máximo</div>
+            <div className="text-lg font-semibold">S/ {max.toLocaleString()}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Mínimo</div>
+            <div className="text-lg font-semibold">S/ {min.toLocaleString()}</div>
+          </div>
         </div>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[350px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} barCategoryGap={16}>
+              <XAxis dataKey="name" axisLine={false} tickLine={false} />
+              <YAxis axisLine={false} tickLine={false} />
+              <Bar dataKey="monto" radius={[8, 8, 0, 0]} fill="#3b82f6" />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

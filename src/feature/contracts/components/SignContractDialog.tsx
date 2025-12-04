@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 import SignatureCanvas from "react-signature-canvas";
 import { PenTool, Trash2 } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,9 @@ export function SignContractDialog({
   onOpenChange,
 }: SignContractDialogProps) {
   const signatureRef = useRef<SignatureCanvas>(null);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const penColor = isDark ? "#FFFFFF" : "#000000";
 
   const { mutate: uploadSignature, isPending } = useUploadContractSignature(
     propertyId,
@@ -98,7 +102,7 @@ export function SignContractDialog({
                 className: "w-full h-52 rounded bg-background cursor-crosshair",
               }}
               backgroundColor="transparent"
-              penColor="currentColor"
+              penColor={penColor}
             />
           </div>
 

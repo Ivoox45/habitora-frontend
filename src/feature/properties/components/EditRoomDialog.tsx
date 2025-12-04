@@ -90,11 +90,26 @@ export function EditRoomDialog({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    const parsed = Number(rent);
+    const MAX_RENT = 10000; // máximo 10k soles
+
+    if (!Number.isFinite(parsed)) {
+      toast.error("Ingresa un número válido para la renta.");
+      return;
+    }
+    if (parsed <= 0) {
+      toast.error("La renta mensual debe ser mayor a 0.");
+      return;
+    }
+    if (parsed > MAX_RENT) {
+      toast.error(`La renta mensual no puede superar S/ ${MAX_RENT}.`);
+      return;
+    }
 
     updateRoom({
       roomId: room.id,
       code,
-      rentPrice: Number(rent || 0),
+      rentPrice: parsed,
     });
   };
 
@@ -127,6 +142,10 @@ export function EditRoomDialog({
               type="number"
               value={rent}
               onChange={(e) => setRent(e.target.value)}
+              min={1}
+              max={10000}
+              step={1}
+              placeholder="Ej. 1200"
             />
           </div>
 
